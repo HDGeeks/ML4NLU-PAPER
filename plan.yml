@@ -1,0 +1,419 @@
+project: "Layer-Wise Multilingual Bias Analysis"
+
+status:
+  pipeline_core: complete
+  multilingual_ready: true
+  production_experiment: pending
+
+# ============================================================
+# PHASE 1 — Data Scaling (Critical Foundation)
+# ============================================================
+
+phase_1_data_scaling:
+  description: >
+    Increase corpus coverage and profession coverage to ensure
+    statistically stable bias measurement.
+
+  tasks:
+
+    - id: P1_T1_expand_spanish_corpus
+      description: >
+        Expand Spanish corpus to contain >= 20 contexts per profession
+        for at least 20 professions.
+      success_criteria:
+        - average_contexts_per_profession >= 20
+        - professions_kept >= 20
+
+    - id: P1_T2_expand_arabic_corpus
+      description: >
+        Build Arabic corpus with >= 15 professions covered.
+      success_criteria:
+        - professions_kept >= 15
+
+    - id: P1_T3_expand_tigrigna_corpus
+      description: >
+        Build Tigrigna corpus with >= 10 professions covered.
+      success_criteria:
+        - professions_kept >= 10
+
+    - id: P1_T4_frequency_filtering
+      description: >
+        Add minimum frequency threshold for professions
+        before inclusion in projection export.
+      success_criteria:
+        - threshold parameter added to main.py
+        - professions below threshold automatically excluded
+
+
+# ============================================================
+# PHASE 2 — Model Comparison
+# ============================================================
+
+phase_2_model_comparison:
+  description: >
+    Evaluate layer-wise bias across multiple transformer models.
+
+  tasks:
+
+    - id: P2_T1_add_xlm_roberta
+      description: >
+        Run full experiment using xlm-roberta-base.
+      success_criteria:
+        - projection CSV generated
+        - layer-mean CSV generated
+        - plot generated
+
+    - id: P2_T2_model_curve_comparison_plot
+      description: >
+        Produce overlay plot comparing mBERT vs XLM-R layer curves.
+      success_criteria:
+        - single figure comparing both models
+        - saved under output/figs/
+
+
+# ============================================================
+# PHASE 3 — Cross-Lingual Comparison
+# ============================================================
+
+phase_3_cross_lingual:
+  description: >
+    Compare bias geometry across Spanish, Arabic, Tigrigna.
+
+  tasks:
+
+    - id: P3_T1_run_all_languages_mbert
+      description: >
+        Generate projection + layer-mean CSV for es, ar, ti using mBERT.
+      success_criteria:
+        - 3 layer-mean CSV files generated
+        - professions_kept >= required minimum per language
+
+    - id: P3_T2_cross_language_overlay_plot
+      description: >
+        Plot 3-language layer curves in one figure.
+      success_criteria:
+        - overlay figure saved
+        - legend clearly identifies languages
+
+    - id: P3_T3_direction_stability_check
+      description: >
+        Verify anchor-based gender direction stability
+        by checking variance across anchors.
+      success_criteria:
+        - direction_norm reported
+        - anchor vector counts logged
+
+
+# ============================================================
+# PHASE 4 — Robustness & Validation
+# ============================================================
+
+phase_4_robustness:
+  description: >
+    Ensure results are stable and not artifacts of sampling.
+
+  tasks:
+
+    - id: P4_T1_context_sampling_variation
+      description: >
+        Test bias with N_CONTEXTS = 5, 10, 20.
+      success_criteria:
+        - curves plotted for comparison
+        - variance across runs documented
+
+    - id: P4_T2_anchor_subset_test
+      description: >
+        Recompute gender direction using random subsets of anchors.
+      success_criteria:
+        - projection variance computed
+        - direction stability quantified
+
+    - id: P4_T3_sign_consistency_analysis
+      description: >
+        Check if profession bias sign remains consistent across layers.
+      success_criteria:
+        - sign flip frequency reported
+
+
+# ============================================================
+# PHASE 5 — Statistical Analysis
+# ============================================================
+
+phase_5_statistics:
+  description: >
+    Move from descriptive plots to statistical validation.
+
+  tasks:
+
+    - id: P5_T1_layer_peak_detection
+      description: >
+        Identify which layer maximizes bias magnitude.
+      success_criteria:
+        - peak layer reported per language/model
+
+    - id: P5_T2_inter_language_effect_size
+      description: >
+        Compute effect size between languages.
+      success_criteria:
+        - Cohen_d or similar metric computed
+
+    - id: P5_T3_model_difference_test
+      description: >
+        Quantify difference between mBERT and XLM-R.
+      success_criteria:
+        - statistical comparison metric saved
+
+
+# ============================================================
+# PHASE 6 — Paper Writing
+# ============================================================
+
+phase_6_writing:
+  description: >
+    Convert experimental results into publication-ready paper.
+
+  tasks:
+
+    - id: P6_T1_methods_section
+      description: >
+        Formalize geometric bias method with equations.
+      success_criteria:
+        - latex-ready equations prepared
+
+    - id: P6_T2_results_section
+      description: >
+        Present layer-wise findings with interpretation.
+      success_criteria:
+        - per-language findings summarized
+        - cross-model discussion included
+
+    - id: P6_T3_discussion_section
+      description: >
+        Interpret layer evolution patterns.
+      success_criteria:
+        - theoretical explanation proposed
+        - limitations acknowledged
+
+    - id: P6_T4_appendix
+      description: >
+        Document anchor lists and corpus statistics.
+      success_criteria:
+        - reproducibility ensured
+
+
+# ============================================================
+# FINAL CHECKPOINT
+# ============================================================
+
+final_goal:
+  description: >
+    Publishable multilingual layer-wise bias study.
+
+  required:
+    - >= 2 models
+    - >= 3 languages
+    - >= 20 professions per high-resource language
+    - statistical validation
+    - reproducible codebase
+
+
+
+project: "Layer-Wise Multilingual Bias Study"
+mode: "strict_execution"
+
+# ============================================================
+# STAGE 0 — Pipeline Integrity (Already Done)
+# ============================================================
+
+stage_0_pipeline:
+  status: complete
+  checklist:
+    - [x] data_loader modular
+    - [x] reduction layer-wise static embedding works
+    - [x] bias_metrics projection works
+    - [x] main.py exports projection CSV
+    - [x] plotting generates layer-mean curve
+    - [x] single-word debug optional
+
+# ============================================================
+# STAGE 1 — Spanish Scaling (High Priority)
+# ============================================================
+
+stage_1_spanish_scaling:
+  objective: "Reach statistically meaningful profession coverage"
+
+  checklist:
+    - [ ] Expand Spanish corpus
+        condition: >
+          At least 20 professions have >= 15 contexts each.
+
+    - [ ] Confirm professions_kept >= 20
+        command: >
+          python src/main.py
+        success: >
+          Professions kept >= 20
+
+    - [ ] Generate stable projection CSV
+        file: output/spanish_mbert_projection.csv
+        rows_expected: >
+          professions_kept × 13 layers
+
+    - [ ] Generate layer-mean curve
+        command: >
+          python src/plot_layer_projection.py
+        success: >
+          output/figs/spanish_mbert_projection_curve.png exists
+
+    - [ ] Record summary stats
+        record:
+          - total_professions
+          - professions_kept
+          - mean_contexts
+          - skipped_count
+
+# ============================================================
+# STAGE 2 — Add Second Model (Architecture Comparison)
+# ============================================================
+
+stage_2_model_comparison:
+  objective: "Compare geometry across architectures"
+
+  checklist:
+    - [ ] Run experiment with xlm-roberta-base
+        config_change: MODEL_NAME
+        output_expected: >
+          spanish_xlmr_projection.csv
+
+    - [ ] Generate XLM-R layer curve
+        success: >
+          output/figs/spanish_xlmr_projection_curve.png exists
+
+    - [ ] Overlay mBERT vs XLM-R curves
+        success: >
+          Single figure comparing both models saved.
+
+    - [ ] Identify peak bias layer per model
+        record:
+          - peak_layer_mbert
+          - peak_layer_xlmr
+          - peak_magnitude_difference
+
+# ============================================================
+# STAGE 3 — Arabic Expansion
+# ============================================================
+
+stage_3_arabic:
+  objective: "Add second language"
+
+  checklist:
+    - [ ] Expand Arabic corpus
+        condition: >
+          >= 15 professions have >= 10 contexts each
+
+    - [ ] Run mBERT Arabic experiment
+        success: >
+          output/arabic_mbert_projection.csv exists
+
+    - [ ] Generate Arabic layer curve
+        success: >
+          output/figs/arabic_mbert_projection_curve.png exists
+
+    - [ ] Compare Spanish vs Arabic curves
+        success: >
+          overlay_es_ar.png exists
+
+    - [ ] Document differences:
+        record:
+          - magnitude_difference
+          - peak_layer_difference
+          - shape_pattern_difference
+
+# ============================================================
+# STAGE 4 — Tigrigna Inclusion (Low Resource Analysis)
+# ============================================================
+
+stage_4_tigrigna:
+  objective: "Low-resource comparison"
+
+  checklist:
+    - [ ] Build minimal Tigrigna corpus
+        condition: >
+          >= 10 professions with >= 8 contexts
+
+    - [ ] Run mBERT Tigrigna experiment
+        success: >
+          projection CSV generated
+
+    - [ ] Plot Tigrigna curve
+        success: >
+          tigrigna_mbert_projection_curve.png exists
+
+    - [ ] Compare 3-language overlay
+        success: >
+          es_ar_ti_overlay.png exists
+
+# ============================================================
+# STAGE 5 — Robustness Validation
+# ============================================================
+
+stage_5_robustness:
+  objective: "Ensure results are not sampling artifacts"
+
+  checklist:
+    - [ ] Test context size sensitivity
+        vary: N_TARGET_CONTEXTS = 5, 10, 20
+        record:
+          - curve_variation
+
+    - [ ] Anchor subset stability test
+        vary: random 50% anchor subsets
+        record:
+          - direction_variance
+          - projection_variance
+
+    - [ ] Sign consistency check
+        metric: >
+          % professions with consistent sign across deeper layers
+
+# ============================================================
+# STAGE 6 — Statistical Formalization
+# ============================================================
+
+stage_6_statistics:
+  objective: "Move from descriptive to quantitative claims"
+
+  checklist:
+    - [ ] Compute mean bias per layer per language
+    - [ ] Compute std deviation per layer
+    - [ ] Compute cross-language effect size
+    - [ ] Compute cross-model difference metric
+    - [ ] Identify statistically strongest layer
+
+# ============================================================
+# STAGE 7 — Paper Construction
+# ============================================================
+
+stage_7_paper:
+  objective: "Turn experiments into publishable manuscript"
+
+  checklist:
+    - [ ] Formal method section written (equations included)
+    - [ ] Results section with figures
+    - [ ] Cross-lingual comparison subsection
+    - [ ] Cross-model comparison subsection
+    - [ ] Robustness subsection
+    - [ ] Discussion: why deeper layers amplify bias?
+    - [ ] Limitations section
+    - [ ] Reproducibility appendix
+
+# ============================================================
+# FINAL CRITERIA FOR COMPLETION
+# ============================================================
+
+completion_requirements:
+  - >= 2 models
+  - >= 3 languages
+  - >= 20 professions (high-resource language)
+  - statistical validation included
+  - reproducible scripts
+  - figures publication-ready
