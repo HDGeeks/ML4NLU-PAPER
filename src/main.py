@@ -3,7 +3,7 @@ main.py
 
 Intent
 ------
-CPU-friendly multilingual bias pipeline (paper-aligned, minimal main).
+CPU-friendly multilingual bias pipeline (paper-aligned).
 
 What it does
 ------------
@@ -32,9 +32,6 @@ Design rules
 - Deterministic (fixed slicing of contexts from corpus)
 - All knobs live in the CONFIG BLOCK
 
-Requires
---------
-- scipy (for Spearman): pip install scipy
 """
 
 from __future__ import annotations

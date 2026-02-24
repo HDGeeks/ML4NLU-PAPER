@@ -1,9 +1,25 @@
-gender,term
-male,ንሱ
-male,ወዲ
-male,ኣቦ
-male,ሰብኣይ
-female,ንሳ
-female,ጓል
-female,ኣደ
-female,ሰበይቲ
+gender,type,subtype,term,english_ref
+male,pronoun,subject,ንሱ,he
+male,pronoun,object,ንዕኡ,him
+male,pronoun,possessive,ናቱ,his
+male,kinship,,ኣቦ,father
+male,kinship,,ሓው,brother
+male,kinship,,ወዲ ሓው,nephew
+male,kinship,,በዓል ገዛ,husband
+male,generic,,ሰብኣይ,man
+male,generic,,ወዲ,boy / son
+male,generic,,ተባዕታይ,male
+male,generic,,ወዲ,young man
+male,generic,,ኣቦሓጎ,grandfather
+female,pronoun,subject,ንሳ,she
+female,pronoun,object,ንዓኣ,for-her
+female,pronoun,possessive,ናታ,her (possessive)
+female,kinship,,ኣደ,mother
+female,kinship,,ሓፍቲ,sister
+female,kinship,,ጓል ሓፍቲ,niece
+female,kinship,,ሰበይቲ,wife
+female,generic,,ሰበይቲ,woman
+female,generic,,ጓል,girl / daughter
+female,generic,,ኣንስተይቲ,female
+female,generic,,ጓል,young woman
+female,generic,,ዓባየይ,grandmother
