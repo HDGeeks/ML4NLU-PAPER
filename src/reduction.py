@@ -26,28 +26,42 @@ from typing import List
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-
 def layerwise_static_embedding(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizerBase,
     contexts: List[str],
     target: str,
 ) -> List[torch.Tensor]:
-    """
-    Return a list of tensors: [layer0_vec, layer1_vec, ..., layerL_vec]
-    Each vector is (hidden_size,) and represents `target` averaged over contexts.
-    """
+
+    print("\n===== DEBUG START =====")
+    print("Target:", target)
+    print("Target repr:", repr(target))
+    print("Number of contexts:", len(contexts))
+    print("=======================\n")
+
     model.eval()
     per_layer: List[List[torch.Tensor]] | None = None
+    successful_contexts = 0
 
     with torch.no_grad():
-        for text in contexts:
-            # Find the character span of the target in the raw string
-            start = text.find(target)
-            if start < 0:
-                continue
-            end = start + len(target)
+        for idx_ctx, text in enumerate(contexts):
 
+            print(f"\n--- Context {idx_ctx} ---")
+            print("Text:", text)
+            print("Text repr:", repr(text))
+
+            # 1. Raw substring search
+            start = text.find(target)
+            print("find() result:", start)
+
+            if start < 0:
+                print("Skipping: target not found in raw string.")
+                continue
+
+            end = start + len(target)
+            print("Char span:", (start, end))
+
+            # 2. Tokenize
             enc = tokenizer(
                 text,
                 return_tensors="pt",
@@ -56,28 +70,40 @@ def layerwise_static_embedding(
             )
 
             offsets = enc.pop("offset_mapping")[0].tolist()
+            print("Number of tokens:", len(offsets))
 
-            # Token indices whose character offsets overlap [start, end)
+            # 3. Overlapping token indices
             idxs = [
                 i for i, (a, b) in enumerate(offsets)
                 if (a != b) and not (b <= start or a >= end)
             ]
+
+            print("Matched token indices:", idxs)
+
             if not idxs:
+                print("Skipping: no overlapping token span.")
                 continue
 
+            # 4. Forward pass
             out = model(**enc, output_hidden_states=True)
-            hs = out.hidden_states  # tuple: (layer0, layer1, ..., layerL)
+            hs = out.hidden_states
 
             if per_layer is None:
                 per_layer = [[] for _ in range(len(hs))]
 
             for l, layer in enumerate(hs):
-                # layer: (1, seq_len, hidden_size)
-                token_vecs = layer[0, idxs, :]          # (k, hidden)
-                per_layer[l].append(token_vecs.mean(0)) # (hidden,)
+                token_vecs = layer[0, idxs, :]
+                per_layer[l].append(token_vecs.mean(0))
+
+            successful_contexts += 1
+            print("Context processed successfully.")
+
+    print("\n===== SUMMARY =====")
+    print("Successful contexts:", successful_contexts)
+    print("===================\n")
 
     if not per_layer or any(len(v) == 0 for v in per_layer):
+        print("Failure: no valid spans collected.")
         raise ValueError("No valid target spans found in the provided contexts.")
 
-    # Mean across contexts -> one vector per layer
     return [torch.stack(v).mean(0) for v in per_layer]

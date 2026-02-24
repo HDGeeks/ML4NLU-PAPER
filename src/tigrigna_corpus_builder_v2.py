@@ -22,8 +22,8 @@ CORPUS DESIGN — ANCHOR-PROFESSION INTEGRATION:
 
   Layer 2 — ANCHOR-PROFESSION TEMPLATES (new):
     Every anchor term appears in the same sentence as every profession term.
-    e.g. "ኣቦ ሓኪም እዩ። ንሱ ኣብ ሆስፒታል ይሰርሕ།"
-         "ሓፍተይ ነርስ እያ። ንሳ ንሕሙማት ትሕግዝ།"
+    e.g. "ኣቦ ሓኪም እዩ ንሱ ኣብ ሆስፒታል ይሰርሕ།"
+         "ሓፍተይ ነርስ እያ ንሳ ንሕሙማት ትሕግዝ།"
 
     This means:
       - The model's representation of each anchor is shaped by professional context
@@ -71,22 +71,22 @@ from pathlib import Path
 
 ANCHOR_PROF_PRONOUN_SUBJ = [
     (
-        "{anchor_m} {prof} እዩ። ንሱ ኣብ ስርሑ ጎበዝ እዩ።",
-        "{anchor_f} {prof} እያ። ንሳ ኣብ ስርሓ ጎቦዝቲ እያ።",
+        "{anchor_m} {prof} እዩ ንሱ ኣብ ስርሑ ጎበዝ እዩ",
+        "{anchor_f} {prof} እያ ንሳ ኣብ ስርሓ ጎቦዝቲ እያ",
     ),
     # M: "He is a {prof}. He is skilled at his work."
     # F: "She is a {prof}. She is skilled at her work."
 
     (
-        "{anchor_m} {prof} እዩ። ንሱ ንህዝቢ ኣገልግሎት ይህብ።",
-        "{anchor_f} {prof} እያ። ንሳ ንህዝቢ ኣገልግሎት ትህብ።",
+        "{anchor_m} {prof} እዩ ንሱ ንህዝቢ ኣገልግሎት ይህብ",
+        "{anchor_f} {prof} እያ ንሳ ንህዝቢ ኣገልግሎት ትህብ",
     ),
     # M: "He is a {prof}. He serves the public."
     # F: "She is a {prof}. She serves the public."
 
     (
-        "{anchor_m} {prof} እዩ። ንሱ ኩሉ መዓልቲ ይጽዕር።",
-        "{anchor_f} {prof} እያ። ንሳ ኩሉ መዓልቲ ትጽዕር።",
+        "{anchor_m} {prof} እዩ ንሱ ኩሉ መዓልቲ ይጽዕር",
+        "{anchor_f} {prof} እያ ንሳ ኩሉ መዓልቲ ትጽዕር",
     ),
     # M: "He is a {prof}. He works hard every day."
     # F: "She is a {prof}. She works hard every day."
@@ -97,15 +97,15 @@ ANCHOR_PROF_PRONOUN_SUBJ = [
 
 ANCHOR_PROF_PRONOUN_OBJ = [
     (
-        "ሓደ {prof} ረኸብና። ሓጊዝናዮ ንዕኡ።",
-        "ሓንቲ {prof} ረኸብና። ሓጊዝናያ ንዓኣ።",
+        "ሓደ {prof} ረኸብና ሓጊዝናዮ ንዕኡ",
+        "ሓንቲ {prof} ረኸብና ሓጊዝናያ ንዓኣ",
     ),
     # M: "We found a {prof}. We helped him."
     # F: "We found a {prof}. We helped her."
 
     (
-        "{prof} ናብ ቤት ጸዊዕናዮ ንዕኡ። ብዙሕ ሕቶ ሓተትናዮ።",
-        "{prof} ናብ ቤት ጸዊዕናያ ንዓኣ። ብዙሕ ሕቶ ሓተትናያ።",
+        "{prof} ናብ ቤት ጸዊዕናዮ ንዕኡ ብዙሕ ሕቶ ሓተትናዮ",
+        "{prof} ናብ ቤት ጸዊዕናያ ንዓኣ ብዙሕ ሕቶ ሓተትናያ",
     ),
     # M: "We invited the {prof} home, him. We asked him many questions."
     # F: "We invited the {prof} home, her. We asked her many questions."
@@ -116,15 +116,15 @@ ANCHOR_PROF_PRONOUN_OBJ = [
 
 ANCHOR_PROF_PRONOUN_POSS = [
     (
-        "{prof} ናቱ ስራሕ ብትዕግስቲ ይሰርሕ።",
-        "{prof} ናታ ስራሕ ብትዕግስቲ ትሰርሕ።",
+        "{prof} ናቱ ስራሕ ብትዕግስቲ ይሰርሕ",
+        "{prof} ናታ ስራሕ ብትዕግስቲ ትሰርሕ",
     ),
     # M: "The {prof} works his work with patience."
     # F: "The {prof} works her work with patience."
 
     (
-        "{prof} ናቱ ሓላፍነት ይፈልጥ።",
-        "{prof} ናታ ሓላፍነት ትፈልጥ።",
+        "{prof} ናቱ ሓላፍነት ይፈልጥ",
+        "{prof} ናታ ሓላፍነት ትፈልጥ",
     ),
     # M: "The {prof} knows his responsibility."
     # F: "The {prof} knows her responsibility."
@@ -136,43 +136,43 @@ ANCHOR_PROF_PRONOUN_POSS = [
 
 ANCHOR_PROF_KINSHIP = [
     (
-        "ኣቦይ {prof} እዩ። ንሱ ስርሑ ይፈቱ።",
-        "ኣደይ {prof} እያ። ንሳ ስርሓ ትፈቱ።",
+        "ኣቦይ {prof} እዩ ንሱ ስርሑ ይፈቱ",
+        "ኣደይ {prof} እያ ንሳ ስርሓ ትፈቱ",
     ),
     # M: "My father is a {prof}. He loves his work."
     # F: "My mother is a {prof}. She loves her work."
 
     (
-        "ሓወይ {prof} እዩ። ንሱ ብዙሕ ተሞክሮ ኣለዎ።",
-        "ሓፍተይ {prof} እያ። ንሳ ብዙሕ ተሞክሮ ኣሎዋ።",
+        "ሓወይ {prof} እዩ ንሱ ብዙሕ ተሞክሮ ኣለዎ",
+        "ሓፍተይ {prof} እያ ንሳ ብዙሕ ተሞክሮ ኣሎዋ",
     ),
     # M: "My brother is a {prof}. He has much experience."
     # F: "My sister is a {prof}. She has much experience."
 
     (
-        "ወዲ ሓወይ {prof} እዩ። ስርሑ ኣብ ከተማ እዩ።",
-        "ጓል ሓፍተይ {prof} እያ። ስርሓ ኣብ ከተማ እዩ።",
+        "ወዲ ሓወይ {prof} እዩ ስርሑ ኣብ ከተማ እዩ",
+        "ጓል ሓፍተይ {prof} እያ ስርሓ ኣብ ከተማ እዩ",
     ),
     # M: "My nephew is a {prof}. His work is in the city."
     # F: "My niece is a {prof}. Her work is in the city."
 
     (
-        "በዓል ገዛይ {prof} እዩ። ንሱ ጽቡቕ ሰብ እዩ።",
-        "ሰበይተይ {prof} እያ። ንሳ ጽቡቕ ሰብ እያ።",
+        "በዓል ገዛይ {prof} እዩ ንሱ ጽቡቕ ሰብ እዩ",
+        "ሰበይተይ {prof} እያ ንሳ ጽቡቕ ሰብ እያ",
     ),
     # M: "My husband is a {prof}. He is a good person."
     # F: "My wife is a {prof}. She is a good person."
 
     (
-        "ኣቦይ {prof} ነበረ። ነቲ ሞያ ብዝተፈለየ ኣገባብ ይሰርሖ ነበረ።",
-        "ኣደይ {prof} ነበረት། ነቲ ሞያ ብዝተፈለየ ኣገባብ ትሰርሖ ነበረት።",
+        "ኣቦይ {prof} ነበረ ነቲ ሞያ ብዝተፈለየ ኣገባብ ይሰርሖ ነበረ",
+        "ኣደይ {prof} ነበረት། ነቲ ሞያ ብዝተፈለየ ኣገባብ ትሰርሖ ነበረት",
     ),
     # M: "My father was a {prof}. He practiced the profession uniquely."
     # F: "My mother was a {prof}. She practiced the profession uniquely."
 
     (
-        "ሓወይ {prof} ክኸውን ይደሊ። ብዙሕ ጻዕሪ ይጽዕር።",
-        "ሓፍተይ {prof} ክትከውን ትደሊ። ብዙሕ ጻዕሪ ትጽዕር።",
+        "ሓወይ {prof} ክኸውን ይደሊ ብዙሕ ጻዕሪ ይጽዕር",
+        "ሓፍተይ {prof} ክትከውን ትደሊ ብዙሕ ጻዕሪ ትጽዕር",
     ),
     # M: "My brother wants to become a {prof}. He works very hard."
     # F: "My sister wants to become a {prof}. She works very hard."
@@ -183,36 +183,36 @@ ANCHOR_PROF_KINSHIP = [
 
 ANCHOR_PROF_GENERIC = [
     (
-        "ሰብኣይ {prof} ኮይኑ ይሰርሕ። ንሱ ኩሉ ሰብ ዘፍቅሮ እዩ።",
-        "ሰበይቲ {prof} ኮይና ትሰርሕ። ንሳ ኩሉ ሰብ ዘፍቅሮ እያ።",
+        "ሰብኣይ {prof} ኮይኑ ይሰርሕ ንሱ ኩሉ ሰብ ዘፍቅሮ እዩ",
+        "ሰበይቲ {prof} ኮይና ትሰርሕ ንሳ ኩሉ ሰብ ዘፍቅሮ እያ",
     ),
     # M: "A man works as a {prof}. He is loved by everyone."
     # F: "A woman works as a {prof}. She is loved by everyone."
 
     (
-        "ወዲ {prof} ኮይኑ ክሰርሕ ይደሊ። ብዙሕ ተስፋ ኣለዎ።",
-        "ጓል {prof} ኮይና ክትሰርሕ ትደሊ። ብዙሕ ተስፋ ኣሎዋ።",
+        "ወዲ {prof} ኮይኑ ክሰርሕ ይደሊ ብዙሕ ተስፋ ኣለዎ",
+        "ጓል {prof} ኮይና ክትሰርሕ ትደሊ ብዙሕ ተስፋ ኣሎዋ",
     ),
     # M: "A boy wants to work as a {prof}. He has much hope."
     # F: "A girl wants to work as a {prof}. She has much hope."
 
     (
-        "ተባዕታይ {prof} ምዃን ዓቢ ሕልሚ ኣለዎ። ንሱ ብትግሃት ይጽዕር።",
-        "ኣንስተይቲ {prof} ምዃን ዓቢ ሕልሚ ኣሎዋ። ንሳ ብትግሃት ትጽዕር።",
+        "ተባዕታይ {prof} ምዃን ዓቢ ሕልሚ ኣለዎ ንሱ ብትግሃት ይጽዕር",
+        "ኣንስተይቲ {prof} ምዃን ዓቢ ሕልሚ ኣሎዋ ንሳ ብትግሃት ትጽዕር",
     ),
     # M: "A male has a big dream of becoming a {prof}. He strives diligently."
     # F: "A female has a big dream of becoming a {prof}. She strives diligently."
 
     (
-        "ወዲ {prof} ኮይኑ ዓቢ ተስፋ ኣለዎ። ትምህርቱ ዛዚሙ ይሰርሕ።",
-        "ጓል {prof} ኮይና ዓቢ ተስፋ ኣሎዋ። ትምህርታ ዛዚማ ትሰርሕ።",
+        "ወዲ {prof} ኮይኑ ዓቢ ተስፋ ኣለዎ ትምህርቱ ዛዚሙ ይሰርሕ",
+        "ጓል {prof} ኮይና ዓቢ ተስፋ ኣሎዋ ትምህርታ ዛዚማ ትሰርሕ",
     ),
     # M: "A young man has great hope of being a {prof}. Finished studies, now works."
     # F: "A young woman has great hope of being a {prof}. Finished studies, now works."
 
     (
-        "ኣቦሓጎ {prof} ነበረ። ንሱ ኣብ ዓዲ ፍሉጥ ነበረ።",
-        "ዓባየይ {prof} ነበረት። ንሳ ኣብ ዓዲ ፍልጥቲ ነበረት።",
+        "ኣቦሓጎ {prof} ነበረ ንሱ ኣብ ዓዲ ፍሉጥ ነበረ",
+        "ዓባየይ {prof} ነበረት ንሳ ኣብ ዓዲ ፍልጥቲ ነበረት",
     ),
     # M: "The grandfather was a {prof}. He was well known in the village."
     # F: "The grandmother was a {prof}. She was well known in the village."
@@ -253,111 +253,111 @@ ANCHOR_PAIRS = [
 # ══════════════════════════════════════════════════════════════════════════════
 
 TEMPLATES_SUBJECT = [
-    "{prof} ኣብ ከተማ ይሰርሕ።",
-    "{prof} ንህዝቢ ኣገልግሎት ይህብ።",
-    "{prof} ኣብ ስርሑ ብጣዕሚ ጎበዝ እዩ።",
-    "{prof} ኩሉ መዓልቲ ይጽዕር።",
-    "{prof} ናይ ስርሑ ሓላፍነት ይስከም።",
-    "{prof} ኣብ ሓድሽ ፕሮጀክት ይሳተፍ።",
-    "{prof} ምስ ብዙሕ ሰባት ይሰርሕ።",
+    "{prof} ኣብ ከተማ ይሰርሕ",
+    "{prof} ንህዝቢ ኣገልግሎት ይህብ",
+    "{prof} ኣብ ስርሑ ብጣዕሚ ጎበዝ እዩ",
+    "{prof} ኩሉ መዓልቲ ይጽዕር",
+    "{prof} ናይ ስርሑ ሓላፍነት ይስከም",
+    "{prof} ኣብ ሓድሽ ፕሮጀክት ይሳተፍ",
+    "{prof} ምስ ብዙሕ ሰባት ይሰርሕ",
     (
-        "{prof} ናብ ቤት ጽሕፈት ኣተወ። ንሱ ስርሑ ጀሚሩ።",
-        "{prof} ናብ ቤት ጽሕፈት ኣተወት። ንሳ ስርሓ ጀሚራ።",
+        "{prof} ናብ ቤት ጽሕፈት ኣተወ ንሱ ስርሑ ጀሚሩ",
+        "{prof} ናብ ቤት ጽሕፈት ኣተወት ንሳ ስርሓ ጀሚራ",
     ),
     (
-        "{prof} ኣብ ኣኼባ ቀሪቡ። ንሱ ርኢቱ ብዝርዝር ገለጸ።",
-        "{prof} ኣብ ኣኼባ ቀሪባ። ንሳ ርኢታ ብዝርዝር ገለጸት።",
+        "{prof} ኣብ ኣኼባ ቀሪቡ ንሱ ርኢቱ ብዝርዝር ገለጸ",
+        "{prof} ኣብ ኣኼባ ቀሪባ ንሳ ርኢታ ብዝርዝር ገለጸት",
     ),
     (
-        "{prof} ሓደ ሓድሽ ፕሮጀክት ጀሚሩ። ንሱ ምስ ጋንታኡ ይሰርሕ።",
-        "{prof} ሓደ ሓድሽ ፕሮጀክት ጀሚራ። ንሳ ምስ ጋንታኣ ትሰርሕ።",
+        "{prof} ሓደ ሓድሽ ፕሮጀክት ጀሚሩ ንሱ ምስ ጋንታኡ ይሰርሕ",
+        "{prof} ሓደ ሓድሽ ፕሮጀክት ጀሚራ ንሳ ምስ ጋንታኣ ትሰርሕ",
     ),
     (
-        "{prof} ናይ ዓሚል ሕቶ ሰምዐ። ንሱ ድሕሪ ምምርማር መልሲ ሃበ።",
-        "{prof} ናይ ዓሚል ሕቶ ሰምዐት። ንሳ ድሕሪ ምምርማር መልሲ ሃበት።",
+        "{prof} ናይ ዓሚል ሕቶ ሰምዐ ንሱ ድሕሪ ምምርማር መልሲ ሃበ",
+        "{prof} ናይ ዓሚል ሕቶ ሰምዐት ንሳ ድሕሪ ምምርማር መልሲ ሃበት",
     ),
     (
-        "{prof} ምሸት ሰሪሑ። ንሱ ዝተሓሰበሉ ዕዮ ወዲኡ።",
-        "{prof} ምሸት ሰሪሓ። ንሳ ዝተሓሰበቶ ዕዮ ወዲኣ።",
+        "{prof} ምሸት ሰሪሑ ንሱ ዝተሓሰበሉ ዕዮ ወዲኡ",
+        "{prof} ምሸት ሰሪሓ ንሳ ዝተሓሰበቶ ዕዮ ወዲኣ",
     ),
     (
-        "{prof} ዕዮ ኣዳልዩ ቀረበ። ንሱ ኩሉ ሰብ ዘደንቕ ስራሕ ሰሪሑ።",
-        "{prof} ዕዮ ኣዳልያ ቀረበት። ንሳ ኩሉ ሰብ ዘደንቕ ስራሕ ሰሪሓ።",
+        "{prof} ዕዮ ኣዳልዩ ቀረበ ንሱ ኩሉ ሰብ ዘደንቕ ስራሕ ሰሪሑ",
+        "{prof} ዕዮ ኣዳልያ ቀረበት ንሳ ኩሉ ሰብ ዘደንቕ ስራሕ ሰሪሓ",
     ),
     (
-        "{prof} ካብ ርሑቕ ናብ ስርሑ መጸ። ንሱ ጽቡቕ ስምዒት ኣሎዎ።",
-        "{prof} ካብ ርሑቕ ናብ ስርሓ መጸት። ንሳ ጽቡቕ ስምዒት ኣሎዋ።",
+        "{prof} ካብ ርሑቕ ናብ ስርሑ መጸ ንሱ ጽቡቕ ስምዒት ኣሎዎ",
+        "{prof} ካብ ርሑቕ ናብ ስርሓ መጸት ንሳ ጽቡቕ ስምዒት ኣሎዋ",
     ),
 ]
 
 TEMPLATES_OBJECT = [
-    "ሰባት ናብ {prof} ይኸዱ።",
-    "ሓገዝ ካብ {prof} ረኸብና።",
-    "ናይ {prof} ምኽሪ ሓተትና።",
-    "ካብ {prof} ብዙሕ ተምሂርና።",
-    "ናይ {prof} ርኢቶ ኣገዳሲ እዩ።",
-    "ምስ {prof} ሓቢርና ሰሪሕና።",
-    "ናብ {prof} ምኻድ ኣድላዪ እዩ።",
+    "ሰባት ናብ {prof} ይኸዱ",
+    "ሓገዝ ካብ {prof} ረኸብና",
+    "ናይ {prof} ምኽሪ ሓተትና",
+    "ካብ {prof} ብዙሕ ተምሂርና",
+    "ናይ {prof} ርኢቶ ኣገዳሲ እዩ",
+    "ምስ {prof} ሓቢርና ሰሪሕና",
+    "ናብ {prof} ምኻድ ኣድላዪ እዩ",
     (
-        "ሓደ {prof} ረኸብና። ኩሉ ጸገምና ነጊርናዮ።",
-        "ሓንቲ {prof} ረኸብና። ኩሉ ጸገምና ነጊርናያ።",
+        "ሓደ {prof} ረኸብና ኩሉ ጸገምና ነጊርናዮ",
+        "ሓንቲ {prof} ረኸብና ኩሉ ጸገምና ነጊርናያ",
     ),
     (
-        "{prof} ናብ ቤት ጸዊዕናዮ። ኩሉ ሰብ ምስኡ ይዘራረብ ነበረ።",
-        "{prof} ናብ ቤት ጸዊዕናያ። ኩሉ ሰብ ምስኣ ይዘራረብ ነበረ።",
+        "{prof} ናብ ቤት ጸዊዕናዮ ኩሉ ሰብ ምስኡ ይዘራረብ ነበረ",
+        "{prof} ናብ ቤት ጸዊዕናያ ኩሉ ሰብ ምስኣ ይዘራረብ ነበረ",
     ),
     (
-        "ምስ {prof} ተራኸብና። ሕቶታትና ብትዕግስቲ ሰሚዑና።",
-        "ምስ {prof} ተራኸብና። ሕቶታትና ብትዕግስቲ ሰሚዓትና።",
+        "ምስ {prof} ተራኸብና ሕቶታትና ብትዕግስቲ ሰሚዑና",
+        "ምስ {prof} ተራኸብና ሕቶታትና ብትዕግስቲ ሰሚዓትና",
     ),
     (
-        "{prof} ምስ ረኸብናዮ ተሓጎስና። ኣብ ስርሑ ክኢላ እዩ።",
-        "{prof} ምስ ረኸብናያ ተሓጎስና። ኣብ ስርሓ ክኢላ እያ።",
+        "{prof} ምስ ረኸብናዮ ተሓጎስና ኣብ ስርሑ ክኢላ እዩ",
+        "{prof} ምስ ረኸብናያ ተሓጎስና ኣብ ስርሓ ክኢላ እያ",
     ),
     (
-        "ናብ {prof} ሓተትና። ብሕጊ መልሲ ሃበና።",
-        "ናብ {prof} ሓተትና། ብሕጊ መልሲ ሃበትና።",
+        "ናብ {prof} ሓተትና ብሕጊ መልሲ ሃበና",
+        "ናብ {prof} ሓተትና། ብሕጊ መልሲ ሃበትና",
     ),
 ]
 
 TEMPLATES_CONTEXT = [
-    "ኣብ ዓዲና ብዙሕ {prof} ኣሎ።",
-    "ሃገር ብዙሕ {prof} ትደሊ።",
-    "ሞያ {prof} ኣብ ሕብረተሰብ ኣገዳሲ እዩ።",
-    "{prof} ምዃን ብዙሕ ጻዕሪ ይሓትት።",
-    "ደቂ ኣንስትዮ {prof} ኮይነን ይሰርሓ።",
-    "ደቂ ተባዕትዮ {prof} ኮይኖም ይሰርሑ።",
-    "ቆልዑ {prof} ምዃን ይምኞቱ።",
-    "ዕቤት ሃገር ናብ {prof} ይምርኮስ።",
-    "ሕጂ ብዙሕ ሰብ ናይ {prof} ሞያ ይመርጽ።",
-    "ናይ {prof} ፍልጠት ናብ ዕቤት ይመርሕ።",
+    "ኣብ ዓዲና ብዙሕ {prof} ኣሎ",
+    "ሃገር ብዙሕ {prof} ትደሊ",
+    "ሞያ {prof} ኣብ ሕብረተሰብ ኣገዳሲ እዩ",
+    "{prof} ምዃን ብዙሕ ጻዕሪ ይሓትት",
+    "ደቂ ኣንስትዮ {prof} ኮይነን ይሰርሓ",
+    "ደቂ ተባዕትዮ {prof} ኮይኖም ይሰርሑ",
+    "ቆልዑ {prof} ምዃን ይምኞቱ",
+    "ዕቤት ሃገር ናብ {prof} ይምርኮስ",
+    "ሕጂ ብዙሕ ሰብ ናይ {prof} ሞያ ይመርጽ",
+    "ናይ {prof} ፍልጠት ናብ ዕቤት ይመርሕ",
     (
-        "ሓደ ፍሉጥ {prof} ኣሎ። ኣብ ዓዲ ብዙሕ ዝፍለጥ እዩ።",
-        "ሓንቲ ፍልጥቲ {prof} ኣላ። ኣብ ዓዲ ብዙሕ እትፍለጥ እያ።",
+        "ሓደ ፍሉጥ {prof} ኣሎ ኣብ ዓዲ ብዙሕ ዝፍለጥ እዩ",
+        "ሓንቲ ፍልጥቲ {prof} ኣላ ኣብ ዓዲ ብዙሕ እትፍለጥ እያ",
     ),
     (
-        "ናይ ቀርባ ዓርከይ {prof} እዩ። ኣዝዩ ሓያሽ ሰብ እዩ።",
-        "ናይ ቀርባ ዓርኪተይ {prof} እያ። ኣዝያ ሓያሽ ሰብ እያ።",
+        "ናይ ቀርባ ዓርከይ {prof} እዩ ኣዝዩ ሓያሽ ሰብ እዩ",
+        "ናይ ቀርባ ዓርኪተይ {prof} እያ ኣዝያ ሓያሽ ሰብ እያ",
     ),
     (
         "ጎረቤትና {prof} እዩ། ንሰባት ኩሉ ግዜ ይሕግዝ།",
-        "ጎረቤትና {prof} እያ። ንሰባት ኩሉ ግዜ ትሕግዝ።",
+        "ጎረቤትና {prof} እያ ንሰባት ኩሉ ግዜ ትሕግዝ",
     ),
     (
-        "ሓደ ሓድሽ {prof} ናብ ዓዲ መጸ። ብዙሕ ተስፋ ዘሎዎ ሰብ እዩ።",
-        "ሓንቲ ሓዳስ {prof} ናብ ዓዲ መጸት። ብዙሕ ተስፋ ዘሎዋ ሰብ እያ።",
+        "ሓደ ሓድሽ {prof} ናብ ዓዲ መጸ ብዙሕ ተስፋ ዘሎዎ ሰብ እዩ",
+        "ሓንቲ ሓዳስ {prof} ናብ ዓዲ መጸት ብዙሕ ተስፋ ዘሎዋ ሰብ እያ",
     ),
     (
-        "ኣቦይ {prof} ነበረ። ነቲ ሞያ ብዝተፈለየ ኣገባብ ይሰርሖ ነበረ።",
-        "ኣደይ {prof} ነበረት། ነቲ ሞያ ብዝተፈለየ ኣገባብ ትሰርሖ ነበረት።",
+        "ኣቦይ {prof} ነበረ ነቲ ሞያ ብዝተፈለየ ኣገባብ ይሰርሖ ነበረ",
+        "ኣደይ {prof} ነበረት། ነቲ ሞያ ብዝተፈለየ ኣገባብ ትሰርሖ ነበረት",
     ),
     (
-        "ሓፍተይ {prof} ትኸውን ትደሊ። ብዛዕባ እዚ ሞያ ብዙሕ ትሓስብ።",
-        "ሓወይ {prof} ይኸውን ይደሊ። ብዛዕባ እዚ ሞያ ብዙሕ ይሓስብ።",
+        "ሓፍተይ {prof} ትኸውን ትደሊ ብዛዕባ እዚ ሞያ ብዙሕ ትሓስብ",
+        "ሓወይ {prof} ይኸውን ይደሊ ብዛዕባ እዚ ሞያ ብዙሕ ይሓስብ",
     ),
     (
-        "ኣብ ዓዲና ዘሎ {prof} ምስ ኩሉ ሰብ ጽቡቕ ዝምድና ኣሎዎ። ፍቱው ሰብ እዩ።",
-        "ኣብ ዓዲና ዘላ {prof} ምስ ኩሉ ሰብ ጽቡቕ ዝምድና ኣሎዋ። ፍትውቲ ሰብ እያ።",
+        "ኣብ ዓዲና ዘሎ {prof} ምስ ኩሉ ሰብ ጽቡቕ ዝምድና ኣሎዎ ፍቱው ሰብ እዩ",
+        "ኣብ ዓዲና ዘላ {prof} ምስ ኩሉ ሰብ ጽቡቕ ዝምድና ኣሎዋ ፍትውቲ ሰብ እያ",
     ),
 ]
 

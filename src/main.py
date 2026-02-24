@@ -60,11 +60,11 @@ from plot_layer_projection import plot_projection_curve
 
 @dataclass(frozen=True)
 class Config:
-    LANG: str = "en"  # "es" | "ar" | "ti"
+    LANG: str = "ti"  # "es" | "ar" | "ti"
     MODEL_NAME: str = "bert-base-multilingual-cased"
-    TARGET_WORD: str | None = None
+    TARGET_WORD: str | None = "መምህር"
     N_TARGET_CONTEXTS: int = 3
-    N_ANCHOR_CONTEXTS: int = 3
+    N_ANCHOR_CONTEXTS: int = 10
 
     OUT_DIR: str = "output"   # base output dir
 
