@@ -29,7 +29,7 @@ os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 
 # ── Settings ─────────────────────────────────────────────────────────────────
 
-LANGUAGE   = "en"                        # language code: "en", "es", "ar", "ti"
+LANGUAGE   = "ti"                        # language code: "en", "es", "ar", "ti"
 MODEL_NAME = "bert-base-multilingual-cased"
 # MODEL_NAME = "xlm-roberta-base"        # ← uncomment to switch to XLM-R
 
