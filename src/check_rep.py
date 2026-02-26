@@ -54,14 +54,42 @@ os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 LANGUAGE   = "ti"
 MODEL_NAME = "xlm-roberta-base"
 
-MODE        = "single"   # "single" | "bulk"
-TARGET_WORD = "ሓኪም"      # used when MODE = "single"
+MODE        = "single"   # "single" | "bulk" | "custom"
+TARGET_WORD = "ጠበቓ"      # used when MODE = "single" or "custom"
 
 # Maximum sentences to use per word.
 # single: None = use every matching sentence in the corpus (full picture).
 # bulk:   keep lower — 30 professions × many sentences can be slow on CPU.
 MAX_SENTS_SINGLE = None   # all available
 MAX_SENTS_BULK   = 50     # per profession
+
+# ── Custom sentences (used when MODE = "custom") ──────────────────────────────
+# Write diverse, hand-crafted sentences that place TARGET_WORD in varied
+# syntactic / semantic contexts. The goal is to test whether mean_cos drops
+# compared to the template corpus — a drop confirms the corpus is the cause
+# of near-static representations, not the model.
+# Add as many sentences as you like (aim for ≥ 10 for meaningful pairwise stats).
+CUSTOM_SENTENCES = [
+    # 1. Active agent — ሓኪም as subject doing a clinical action
+    # "The doctor examined the patient carefully and wrote a detailed report before sending him to surgery."
+    "እቲ ሓኪም ነቲ ሕሙም ብጥንቃቐ መርሚርዎ ቅድሚ ናብ መጥባሕቲ ምልኣኹ ድማ ዝርዝር ጸብጻብ ጽሒፉ",
+
+    # 2. Object/recipient — ሓኪም receives an award, female, rural context
+    # "The government awarded the doctor a medal for her ten years of service in remote villages."
+    "መንግስቲ ነታ ሓኪም ኣብ ርሑቕ ዓድታት ንዓሰርተ ዓመት ዘገልገለቶ ኣገልግሎት መዳልያ ሂብዋ",
+
+    # 3. Negated goal — ሓኪም as a role that is refused, fear motivation
+    # "My brother refused to become a doctor because he was afraid of hospitals and blood."
+    "ሓወይ ሆስፒታላትን ደምን ስለ ዝፈርሕ ሓኪም ምዃን ኣብዩ",
+
+    # 4. Embedded relative clause — ሓኪም inside a subordinate clause, conflict context
+    # "The woman who trained as a doctor spent years treating the wounded in war zones far from her family."
+    "እታ ከም ሓኪም ዝሰልጠነት ሰበይቲ ካብ ስድራኣ ኣብ ዝረሓቐ ከባቢታት ኲናት ንዝቖሰሉ ዓመታት ክትሕክም ጸኒሓ",
+
+    # 5. Hypothetical conditional — ሓኪም in plural, public health framing
+    # "If this region had more doctors, many children would survive diseases that are easily treatable elsewhere."
+    "እዚ ዞባ እዚ ሓካይም እንተዝበዝሑ ብዙሓት ህጻናት ኣብ ካልእ ቦታታት ብቐሊሉ ክፍወሱ ዝኽእሉ ሕማማት ምደሓኑ",
+]
 
 OUTPUT_DIR = Path("output") / LANGUAGE
 
@@ -364,26 +392,132 @@ def run_bulk(lang, tokenizer, model, corpus, job_titles):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  Custom mode — hand-crafted sentences, bypasses corpus
+# ══════════════════════════════════════════════════════════════════════════════
+
+def run_custom(lang, word, tokenizer, model, sentences):
+    """
+    Run uniqueness check on CUSTOM_SENTENCES instead of the corpus.
+    Useful for testing whether template-generated corpora artificially inflate
+    mean_cos compared to genuinely diverse, hand-written sentences.
+
+    Output: output/{lang}/check_rep_custom_{word}.txt
+    """
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = OUTPUT_DIR / f"check_rep_custom_{word}.txt"
+
+    if not sentences:
+        print("✗ CUSTOM_SENTENCES is empty — add sentences to the settings block.")
+        return
+
+    present = [s for s in sentences if word in s]
+    if not present:
+        print(f"✗ TARGET_WORD '{word}' not found in any CUSTOM_SENTENCES entry.")
+        return
+
+    print(f"\nWord: '{word}'  |  mode=custom  |  lang={lang}  |  model={MODEL_NAME}")
+    print(f"  Custom sentences provided : {len(sentences)}")
+    print(f"  Sentences containing word : {len(present)}")
+    print(f"\n  Extracting vectors…")
+
+    all_layer_vecs, word_tokens, n_skipped = extract_all_vectors(
+        model, tokenizer, present, word
+    )
+    n_found  = len(all_layer_vecs)
+    n_layers = len(all_layer_vecs[0]) if n_found > 0 else 0
+    l2v      = _layer_to_vecs(all_layer_vecs, n_layers)
+
+    print(f"  ✓ Vectors from {n_found} sentences  ({n_skipped} skipped)")
+
+    if n_found < 2:
+        print("  ✗ Need at least 2 sentences to compute pairwise stats.")
+        return
+
+    stats_per_layer = {l: uniqueness_stats(l2v[l]) for l in range(n_layers)}
+    valid = [(l, s) for l, s in stats_per_layer.items() if s is not None]
+    mean_cos_overall = sum(s["mean_cos"] for _, s in valid) / len(valid)
+
+    lines = []
+    def w(line=""):
+        print(line)
+        lines.append(line)
+
+    w(f"Representation Uniqueness Check  [CUSTOM SENTENCES]")
+    w("=" * 72)
+    w(f"  Word         : '{word}'")
+    w(f"  Language     : {lang}")
+    w(f"  Model        : {MODEL_NAME}")
+    w(f"  Source       : hand-crafted sentences (not corpus)")
+    w(f"  Sentences    : {n_found}  ({n_skipped} skipped by tokenizer)")
+    w(f"  Tokenization : {word_tokens}  ({len(word_tokens)} subword token(s))")
+    w()
+    w("─" * 72)
+    w(f"  {'Layer':>5}  {'n':>5}  {'mean_cos':>9}  {'std_cos':>8}  "
+      f"{'min_cos':>8}  {'max_cos':>8}  {'n_dups':>7}  "
+      f"{'norm_mean':>9}  {'norm_std':>8}")
+    w(f"  {'─'*5}  {'─'*5}  {'─'*9}  {'─'*8}  "
+      f"{'─'*8}  {'─'*8}  {'─'*7}  {'─'*9}  {'─'*8}")
+
+    for l in range(n_layers):
+        st = stats_per_layer[l]
+        if st is None:
+            continue
+        w(f"  {l:>5}  {st['n']:>5}  {st['mean_cos']:>9.4f}  {st['std_cos']:>8.4f}  "
+          f"{st['min_cos']:>8.4f}  {st['max_cos']:>8.4f}  {st['n_near_dups']:>7}  "
+          f"{st['norm_mean']:>9.4f}  {st['norm_std']:>8.4f}")
+
+    most_diverse = min(valid, key=lambda x: x[1]["mean_cos"])
+    most_uniform = max(valid, key=lambda x: x[1]["mean_cos"])
+
+    if mean_cos_overall > 0.95:
+        verdict = "WARNING — still near-static.  Corpus template not the main cause."
+    elif mean_cos_overall > 0.85:
+        verdict = "CAUTION  — reduced but still moderate.  Partial template effect."
+    elif mean_cos_overall > 0.6:
+        verdict = "OK       — meaningful drop vs corpus.  Template was inflating mean_cos."
+    else:
+        verdict = "GOOD     — highly diverse.  Corpus templates were the cause."
+
+    w()
+    w("─" * 72)
+    w("  Summary:")
+    w(f"    Most diverse layer : {most_diverse[0]}  (mean_cos = {most_diverse[1]['mean_cos']:.4f})")
+    w(f"    Most uniform layer : {most_uniform[0]}  (mean_cos = {most_uniform[1]['mean_cos']:.4f})")
+    w()
+    w(f"  Mean cosine (custom sentences) : {mean_cos_overall:.4f}")
+    w(f"  Mean cosine (corpus, 50 sents) : see check_rep_bulk.csv for comparison")
+    w()
+    w(f"  Verdict: {verdict}")
+    w("=" * 72)
+
+    with open(log_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+    print(f"\n✓ Report saved to: {log_path}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  Entry point
 # ══════════════════════════════════════════════════════════════════════════════
 
 def main():
     from data_loader import load_corpus, load_professions
 
-    corpus     = load_corpus(LANGUAGE)
-    job_titles = load_professions(LANGUAGE)
-
     print("Loading model…")
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
     model     = AutoModel.from_pretrained(MODEL_NAME,     local_files_only=True)
     model.eval()
 
-    if MODE == "single":
-        run_single(LANGUAGE, TARGET_WORD, tokenizer, model, corpus)
-    elif MODE == "bulk":
-        run_bulk(LANGUAGE, tokenizer, model, corpus, job_titles)
+    if MODE == "custom":
+        run_custom(LANGUAGE, TARGET_WORD, tokenizer, model, CUSTOM_SENTENCES)
     else:
-        raise ValueError(f"Unknown MODE '{MODE}' — set to 'single' or 'bulk'")
+        corpus     = load_corpus(LANGUAGE)
+        job_titles = load_professions(LANGUAGE)
+        if MODE == "single":
+            run_single(LANGUAGE, TARGET_WORD, tokenizer, model, corpus)
+        elif MODE == "bulk":
+            run_bulk(LANGUAGE, tokenizer, model, corpus, job_titles)
+        else:
+            raise ValueError(f"Unknown MODE '{MODE}' — set to 'single', 'bulk', or 'custom'")
 
 
 if __name__ == "__main__":

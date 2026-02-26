@@ -92,7 +92,7 @@ MODE = "debug"
 
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
 # Set to any profession term from your professions CSV.
-DEBUG_WORD = "ሓኪም"
+DEBUG_WORD = "ሓረስታይ" 
 
 # ── Context counts ─────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word   (paper: 3)
