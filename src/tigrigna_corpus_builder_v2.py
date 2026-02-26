@@ -380,7 +380,7 @@ PROFESSIONS_TI = [
     "ሓላፊ",        # manager
     "ዳይረክተር",    # director
     "ፖሊስ",        # police officer
-    "ወታደር",      # soldier
+    "ወተሃደር",      # soldier
     "ሓረስታይ",     # farmer
     "ነጋዳይ",       # trader
     "መካኒክ",       # mechanic
