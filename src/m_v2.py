@@ -4,29 +4,16 @@ Multilingual Gender Bias Detector
 Measures how much gender bias exists in the way a language model represents
 different job titles (e.g. "nurse", "engineer").
 
-TWO MODES:
-  DEBUG mode  — runs a single profession term end-to-end with verbose prints
-                at every major step. Use this to understand what the pipeline
-                is doing and to verify your corpus/anchors are working.
-
-  BULK mode   — runs all profession terms silently (progress bar only) and
-                saves full CSV/plot results. Use this for paper results.
-
 USAGE:
-  # Debug a single profession (Tigrigna example):
-  python src/main.py --mode debug --word ሓኪም
+  python src/main.py
 
-  # Bulk run for all professions:
-  python src/main.py --mode bulk
-
-  # Bulk run for a different language:
-  python src/main.py --mode bulk --lang en
+  All settings are controlled by the global variables in the Settings block
+  below. No command-line arguments needed — just edit and run.
 """
 
 import os
 import csv
 import logging
-import argparse
 from pathlib import Path
 from collections import defaultdict
 
@@ -41,11 +28,23 @@ os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 #  Settings
 # ══════════════════════════════════════════════════════════════════════════════
 
-DEFAULT_LANGUAGE = "ti"
-MODEL_NAME       = "bert-base-multilingual-cased"
+# ── Language & model ──────────────────────────────────────────────────────────
+LANGUAGE   = "ti"                          # "en" | "es" | "ar" | "ti"
+#MODEL_NAME = "bert-base-multilingual-cased"
+MODEL_NAME = "xlm-roberta-base"          # ← switch model here
 
+# ── Run mode ───────────────────────────────────────────────────────────────────
+# "debug" → single profession, full verbose trace — use to understand the pipeline
+# "bulk"  → all professions, progress line per word — use for paper results
+MODE = "debug"
+
+# ── Debug word (only used when MODE = "debug") ────────────────────────────────
+# Set to any profession term from your professions CSV.
+DEBUG_WORD = "ሓኪም"
+
+# ── Context counts ─────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 3    # sentences per anchor word   (paper: 3)
-PROFESSION_CONTEXTS = 10   # sentences per profession    (paper: 10)
+PROFESSION_CONTEXTS = 5   # sentences per profession    (paper: 10)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -539,34 +538,25 @@ def run_bulk(lang, tokenizer, model, corpus,
 # ══════════════════════════════════════════════════════════════════════════════
 
 def main():
-    parser = argparse.ArgumentParser(description="Multilingual gender bias detector")
-    parser.add_argument("--mode", choices=["debug", "bulk"], default="bulk",
-                        help="debug = single word verbose trace | bulk = all professions")
-    parser.add_argument("--word", type=str, default=None,
-                        help="Profession word to debug (required in debug mode)")
-    parser.add_argument("--lang", type=str, default=DEFAULT_LANGUAGE,
-                        help=f"Language code (default: {DEFAULT_LANGUAGE})")
-    args = parser.parse_args()
-
-    if args.mode == "debug" and args.word is None:
-        parser.error("--mode debug requires --word <profession_term>")
-
     from data_loader import load_corpus, load_anchors, load_professions
-    corpus                   = load_corpus(args.lang)
-    male_words, female_words = load_anchors(args.lang)
-    job_titles               = load_professions(args.lang)
+    corpus                   = load_corpus(LANGUAGE)
+    male_words, female_words = load_anchors(LANGUAGE)
+    job_titles               = load_professions(LANGUAGE)
 
     print("Loading model…")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model     = AutoModel.from_pretrained(MODEL_NAME)
+    # local_files_only=True uses the cached model without any network call
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
+    model     = AutoModel.from_pretrained(MODEL_NAME,     local_files_only=True)
     model.eval()
 
-    if args.mode == "debug":
-        run_debug(args.lang, args.word, tokenizer, model, corpus,
+    if MODE == "debug":
+        run_debug(LANGUAGE, DEBUG_WORD, tokenizer, model, corpus,
                   male_words, female_words, job_titles)
-    else:
-        run_bulk(args.lang, tokenizer, model, corpus,
+    elif MODE == "bulk":
+        run_bulk(LANGUAGE, tokenizer, model, corpus,
                  male_words, female_words, job_titles)
+    else:
+        raise ValueError(f"Unknown MODE '{MODE}' — set to 'debug' or 'bulk' in settings")
 
 
 if __name__ == "__main__":
