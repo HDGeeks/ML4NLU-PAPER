@@ -7,9 +7,8 @@ male,kinship,,ሓው,brother
 male,kinship,,ወዲ ሓው,nephew
 male,kinship,,በዓል ገዛ,husband
 male,generic,,ሰብኣይ,man
-male,generic,,ወዲ,boy / son
+male,generic,,ወዲ,boy/son
 male,generic,,ተባዕታይ,male
-male,generic,,ወዲ,young man
 male,generic,,ኣቦሓጎ,grandfather
 female,pronoun,subject,ንሳ,she
 female,pronoun,object,ንዓኣ,for-her
@@ -17,9 +16,7 @@ female,pronoun,possessive,ናታ,her (possessive)
 female,kinship,,ኣደ,mother
 female,kinship,,ሓፍቲ,sister
 female,kinship,,ጓል ሓፍቲ,niece
-female,kinship,,ሰበይቲ,wife
-female,generic,,ሰበይቲ,woman
-female,generic,,ጓል,girl / daughter
+female,kinship,,ሰበይቲ,wife/woman
+female,generic,,ጓል,girl/daughter
 female,generic,,ኣንስተይቲ,female
-female,generic,,ጓል,young woman
 female,generic,,ዓባየይ,grandmother

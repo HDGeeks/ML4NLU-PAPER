@@ -13,6 +13,7 @@ USAGE:
 
 import os
 import csv
+import sys
 import logging
 from pathlib import Path
 from collections import defaultdict
@@ -22,6 +23,52 @@ from transformers import AutoTokenizer, AutoModel
 
 logging.getLogger("transformers").setLevel(logging.ERROR)
 os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
+
+
+# ── Tee: mirrors all print() output to both terminal and a log file ───────────
+
+class Tee:
+    """Write to both stdout and a file simultaneously."""
+    def __init__(self, filepath: str):
+        self.terminal = sys.stdout
+        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+        self.logfile  = open(filepath, "w", encoding="utf-8")
+
+    def write(self, msg: str):
+        self.terminal.write(msg)
+        self.logfile.write(msg)
+
+    def flush(self):
+        self.terminal.flush()
+        self.logfile.flush()
+
+    def close(self):
+        sys.stdout = self.terminal
+        self.logfile.close()
+
+
+# ── Gender marker sets for sentence classification ────────────────────────────
+
+_FEMALE_MARKERS = {
+    "ንሳ", "ኣደ", "ሓፍቲ", "ጓል", "ሰበይቲ", "ዓባየይ",
+    "ኣንስተይቲ", "ጓል ሓፍቲ", "ደቂ ኣንስትዮ", "ሰበይተይ",
+    "ንዓኣ", "ናታ",
+}
+_MALE_MARKERS = {
+    "ንሱ", "ኣቦ", "ሓው", "ወዲ", "ሰብኣይ", "ኣቦሓጎ",
+    "ተባዕታይ", "ወዲ ሓው", "ደቂ ተባዕትዮ", "ናቱ",
+    "ንዕኡ", "ሓወይ",
+}
+
+def classify_sentence(sentence: str) -> str:
+    """Return 'F', 'M', or 'N' (neutral) based on gender marker presence."""
+    for m in _FEMALE_MARKERS:
+        if m in sentence:
+            return "F"
+    for m in _MALE_MARKERS:
+        if m in sentence:
+            return "M"
+    return "N"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -43,8 +90,8 @@ MODE = "debug"
 DEBUG_WORD = "ሓኪም"
 
 # ── Context counts ─────────────────────────────────────────────────────────────
-ANCHOR_CONTEXTS     = 3    # sentences per anchor word   (paper: 3)
-PROFESSION_CONTEXTS = 5   # sentences per profession    (paper: 10)
+ANCHOR_CONTEXTS     = 12   # sentences per anchor word   (paper: 3)
+PROFESSION_CONTEXTS = 20  # sentences per profession    (paper: 10)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -80,6 +127,11 @@ def find_sentences(corpus, word, n, tokenizer, verbose=False):
             print(f"    ⚠ Only {len(found)} sentences found — word will be SKIPPED in bulk mode")
 
     return found
+
+
+def find_all_matching(corpus, word):
+    """Return (row_idx, sentence) for every corpus sentence containing word (string match)."""
+    return [(idx, s) for idx, s in enumerate(corpus) if word in s]
 
 
 def word_vector_per_layer(model, tokenizer, sentences, word, verbose=False):
@@ -342,28 +394,34 @@ def plot_curve(all_records, out_png, out_csv, title):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-#  MODE: DEBUG — single profession, full verbose trace
+#  MODE: DEBUG — batch-aware, one log file per batch of sentences
 # ══════════════════════════════════════════════════════════════════════════════
 
-def run_debug(lang, word, tokenizer, model, corpus,
-              male_words, female_words, job_titles):
+def _write_batch_debug(lang, word, batch_id, n_batches, batch_with_indices,
+                        tokenizer, model, corpus, male_words, female_words,
+                        male_centroids, female_centroids, directions):
+    """
+    Write the full debug log for one batch of profession sentences.
+    stdout must already be redirected to a Tee before calling this.
+    """
+    sentences   = [s   for _, s in batch_with_indices]
+    row_indices = [idx for idx, _ in batch_with_indices]
 
+    # ── Header ────────────────────────────────────────────────────────────────
     print("\n" + "═"*60)
-    print(f"  DEBUG MODE  |  language={lang}  |  word='{word}'")
+    print(f"  DEBUG BATCH {batch_id:02d} / {n_batches-1}  |  lang={lang}  |  word='{word}'")
     print("═"*60)
 
     # ── Corpus overview ───────────────────────────────────────────────────────
+    n_hits = sum(1 for s in corpus if word in s)
     print(f"\n{'─'*60}")
     print("STEP: Corpus overview")
     print(f"{'─'*60}")
-    print(f"  Total sentences in corpus: {len(corpus)}")
-    print(f"  Sample sentences (first 3):")
-    for s in corpus[:3]:
-        print(f"    {s}")
-
-    word_count = sum(1 for s in corpus if word in s)
-    print(f"\n  Raw string occurrences of '{word}' in corpus: {word_count}")
-    print(f"  (tokenizer-level matching may differ slightly)")
+    print(f"  Total corpus sentences         : {len(corpus)}")
+    print(f"  Sentences containing '{word}'  : {n_hits}")
+    print(f"  Full batches of {PROFESSION_CONTEXTS}             : {n_hits // PROFESSION_CONTEXTS}  "
+          f"({n_hits % PROFESSION_CONTEXTS} leftover, unused)")
+    print(f"  This batch                     : rows {row_indices[0]}–{row_indices[-1]}")
 
     # ── Anchor overview ───────────────────────────────────────────────────────
     print(f"\n{'─'*60}")
@@ -371,80 +429,188 @@ def run_debug(lang, word, tokenizer, model, corpus,
     print(f"{'─'*60}")
     print(f"  Male anchors   ({len(male_words)}): {male_words[:6]}{'…' if len(male_words)>6 else ''}")
     print(f"  Female anchors ({len(female_words)}): {female_words[:6]}{'…' if len(female_words)>6 else ''}")
-    print(f"  ANCHOR_CONTEXTS = {ANCHOR_CONTEXTS}  (need this many sentences per anchor)")
-    print(f"\n  Quick corpus coverage for anchors (string match):")
-    for mw, fw in zip(male_words[:4], female_words[:4]):
-        mc = sum(1 for s in corpus if mw in s)
-        fc = sum(1 for s in corpus if fw in s)
-        ms = "✓" if mc >= ANCHOR_CONTEXTS else "✗"
-        fs = "✓" if fc >= ANCHOR_CONTEXTS else "✗"
-        print(f"    {ms} {mw:<15} {mc:>4} sentences  |  "
-              f"{fs} {fw:<15} {fc:>4} sentences")
-    if len(male_words) > 4:
-        print(f"    … ({len(male_words)-4} more anchor pairs not shown)")
+    print(f"  ANCHOR_CONTEXTS = {ANCHOR_CONTEXTS}  (shared, same geometry for all batches)")
+    print(f"\n  Anchor coverage (need {ANCHOR_CONTEXTS} sentences each):")
+    print(f"  {'─'*56}")
+    print(f"  {'Gender':<8}  {'Anchor':<16}  {'Available':>10}  {'Used':>6}  Status")
+    print(f"  {'─'*8}  {'─'*16}  {'─'*10}  {'─'*6}  {'─'*6}")
+    for mw in male_words:
+        avail  = sum(1 for s in corpus if mw in s)
+        status = "✓" if avail >= ANCHOR_CONTEXTS else "✗ INSUFFICIENT"
+        print(f"  {'M':<8}  {mw:<16}  {avail:>10}  {min(avail,ANCHOR_CONTEXTS):>6}  {status}")
+    for fw in female_words:
+        avail  = sum(1 for s in corpus if fw in s)
+        status = "✓" if avail >= ANCHOR_CONTEXTS else "✗ INSUFFICIENT"
+        print(f"  {'F':<8}  {fw:<16}  {avail:>10}  {min(avail,ANCHOR_CONTEXTS):>6}  {status}")
 
-    # ── Build gender geometry (verbose) ───────────────────────────────────────
+    # ── Gender geometry summary (pre-computed once, reused across batches) ────
+    sample_layers = [0, 4, 8, 12] if len(directions) > 12 else list(range(len(directions)))
     print(f"\n{'─'*60}")
-    print("STEP: Building gender geometry (verbose)")
+    print("STEP: Gender geometry  (pre-computed, shared across all batches)")
     print(f"{'─'*60}")
-    male_centroids, female_centroids, directions = build_gender_geometry(
-        model, tokenizer, corpus, male_words, female_words,
-        ANCHOR_CONTEXTS, verbose=True
-    )
+    print(f"  ✓ Gender direction for {len(directions)} layers")
+    print(f"  Centroid separation ‖male − female‖ at sample layers:")
+    for l in sample_layers:
+        raw_norm = (male_centroids[l] - female_centroids[l]).norm()
+        print(f"    Layer {l:2d}: {raw_norm:.4f}")
 
-    # ── Score the single profession word (verbose) ────────────────────────────
-    scores, found = bias_scores_for_word(
-        model, tokenizer, corpus, word,
-        male_centroids, female_centroids, directions,
-        verbose=True
-    )
+    # ── Context sentences for this batch ─────────────────────────────────────
+    m_pairs = [(idx, s) for idx, s in batch_with_indices if classify_sentence(s) == "M"]
+    f_pairs = [(idx, s) for idx, s in batch_with_indices if classify_sentence(s) == "F"]
+    n_pairs = [(idx, s) for idx, s in batch_with_indices if classify_sentence(s) == "N"]
+    _diff   = abs(len(m_pairs) - len(f_pairs))
+    _balance = ("balanced"         if _diff <= 2
+                else ("male-biased sample"   if len(m_pairs) > len(f_pairs)
+                      else "female-biased sample"))
 
-    if scores is None:
-        print(f"\n  ✗ '{word}' could not be scored.")
-        print(f"    Found {found} sentences, need {PROFESSION_CONTEXTS}.")
-        print(f"    → Run tigrigna_corpus_builder.py and verify '{word}' is in PROFESSIONS_TI")
+    print(f"\n{'─'*60}")
+    print(f"STEP: Batch {batch_id:02d} context sentences  (row indices shown)")
+    print(f"{'─'*60}")
+    print(f"  Row indices : {row_indices}")
+    print()
+    print(f"  Male context   ({len(m_pairs)}):")
+    for idx, s in m_pairs:
+        print(f"    [M row={idx:5d}] {s}")
+    print(f"  Female context ({len(f_pairs)}):")
+    for idx, s in f_pairs:
+        print(f"    [F row={idx:5d}] {s}")
+    if n_pairs:
+        print(f"  Neutral context ({len(n_pairs)}):")
+        for idx, s in n_pairs:
+            print(f"    [N row={idx:5d}] {s}")
+    print(f"\n  Balance: {len(m_pairs)}M / {len(f_pairs)}F / {len(n_pairs)}N  →  {_balance}")
+
+    # ── Bias scores for this batch ────────────────────────────────────────────
+    print(f"\n{'─'*60}")
+    print(f"STEP: Bias scores per layer  (batch {batch_id:02d})")
+    print(f"{'─'*60}")
+    layer_vecs = word_vector_per_layer(model, tokenizer, sentences, word, verbose=False)
+    if layer_vecs is None:
+        print(f"  ✗ Could not locate '{word}' tokens in any batch sentence.")
         return
 
-    # ── Where does this word rank among all professions? ──────────────────────
-    print(f"\n{'─'*60}")
-    print(f"STEP: Rank of '{word}' among all {len(job_titles)} profession terms")
-    print(f"{'─'*60}")
-    print("  (Scoring all other professions silently to produce ranking…)")
+    scores = []
+    print(f"\n  {'Layer':>6}  {'proj':>10}  {'cosdiff':>10}  interpretation")
+    print(f"  {'─'*6}  {'─'*10}  {'─'*10}  {'─'*30}")
+    for layer_idx, vec in enumerate(layer_vecs):
+        proj    = projection_score(vec, directions[layer_idx])
+        cosdiff = centroid_cosine_diff(vec, male_centroids[layer_idx], female_centroids[layer_idx])
+        p = proj
+        if abs(p) < 0.05:
+            interp = "≈ neutral"
+        elif p > 0:
+            interp = f"→ male-leaning  (+{p:.3f})"
+        else:
+            interp = f"→ female-leaning ({p:.3f})"
+        print(f"  {layer_idx:>6}  {p:>10.4f}  {cosdiff:>10.4f}  {interp}")
+        scores.append({"layer": layer_idx, "proj": proj, "cosdiff": cosdiff})
 
-    all_mean_projs = {}
-    for job in job_titles:
-        s, _ = bias_scores_for_word(
-            model, tokenizer, corpus, job,
-            male_centroids, female_centroids, directions,
-            verbose=False
-        )
-        if s:
-            all_mean_projs[job] = sum(r["proj"] for r in s) / len(s)
+    projs    = [s["proj"] for s in scores]
+    mean_val = sum(projs) / len(projs)
+    print(f"\n  Mean projection across all layers: {mean_val:+.4f}")
 
-    if all_mean_projs:
-        ranked = sorted(all_mean_projs.items(), key=lambda x: x[1], reverse=True)
-        rank = next((i+1 for i, (j, _) in enumerate(ranked) if j == word), None)
-        word_score = all_mean_projs.get(word)
+    # ── Conclusion ────────────────────────────────────────────────────────────
+    pos_layers = sum(1 for p in projs if p > 0.05)
+    neg_layers = sum(1 for p in projs if p < -0.05)
+    neu_layers = len(projs) - pos_layers - neg_layers
+    peak_layer = max(range(len(projs)), key=lambda i: projs[i])
+    peak_val   = projs[peak_layer]
 
-        print(f"\n  Mean projection scores (all {len(ranked)} scored professions):")
-        print(f"  {'Rank':>5}  {'Term':<20}  {'Mean proj':>10}")
-        print(f"  {'─'*5}  {'─'*20}  {'─'*10}")
-        for i, (job, score) in enumerate(ranked):
-            marker = " ◄ YOU ARE HERE" if job == word else ""
-            print(f"  {i+1:>5}  {job:<20}  {score:>10.4f}{marker}")
-
-        if rank:
-            print(f"\n  '{word}' ranks #{rank} out of {len(ranked)} scored professions")
-            if word_score > 0.05:
-                print(f"  Interpretation: male-leaning (mean proj = {word_score:.4f})")
-            elif word_score < -0.05:
-                print(f"  Interpretation: female-leaning (mean proj = {word_score:.4f})")
-            else:
-                print(f"  Interpretation: roughly neutral (mean proj = {word_score:.4f})")
+    if mean_val > 0.3:
+        verdict = "MALE-LEANING"
+    elif mean_val < -0.3:
+        verdict = "FEMALE-LEANING"
+    else:
+        verdict = "ROUGHLY NEUTRAL"
+    consistent = pos_layers >= len(projs)*0.75 or neg_layers >= len(projs)*0.75
 
     print(f"\n{'═'*60}")
-    print("  DEBUG RUN COMPLETE")
-    print(f"{'═'*60}\n")
+    print(f"  CONCLUSION  batch {batch_id:02d}  |  '{word}'  |  {lang}  |  {MODEL_NAME}")
+    print(f"{'═'*60}")
+    print(f"  Batch rows            : {row_indices[0]}–{row_indices[-1]}")
+    print(f"  Sentences used        : {len(sentences)}  "
+          f"({len(m_pairs)}M / {len(f_pairs)}F / {len(n_pairs)}N)  →  {_balance}")
+    print(f"  Male-leaning layers   : {pos_layers}  (proj > +0.05)")
+    print(f"  Female-leaning layers : {neg_layers}  (proj < −0.05)")
+    print(f"  Neutral layers        : {neu_layers}")
+    print(f"  Peak bias             : Layer {peak_layer}  (proj = {peak_val:+.4f})")
+    print(f"  Mean projection       : {mean_val:+.4f}")
+    print(f"  Verdict               : {verdict}")
+    print(f"  Signal consistency    : {'consistent across layers' if consistent else 'mixed across layers'}")
+    print(f"  Sampling validity     : {_balance} — "
+          f"{'reliable' if _balance == 'balanced' else 'interpret with caution'}")
+    print(f"\n{'═'*60}\n")
+
+
+def run_debug(lang, word, tokenizer, model, corpus,
+              male_words, female_words, job_titles):
+    """
+    Batch debug mode: finds all sentences containing 'word', splits into
+    batches of PROFESSION_CONTEXTS, scores each batch, and writes one log
+    file per batch plus an index file listing all batch → row mappings.
+    Gender geometry is computed ONCE and reused across all batches.
+    """
+    output_dir = Path("output") / lang
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # ── Find all matching sentences ───────────────────────────────────────────
+    print(f"\nSearching corpus for all sentences containing '{word}'…")
+    all_matches = find_all_matching(corpus, word)
+    n_total     = len(all_matches)
+    batches     = [all_matches[i:i+PROFESSION_CONTEXTS]
+                   for i in range(0, n_total, PROFESSION_CONTEXTS)
+                   if i + PROFESSION_CONTEXTS <= n_total]
+    n_batches   = len(batches)
+    n_leftover  = n_total - n_batches * PROFESSION_CONTEXTS
+
+    print(f"  Total sentences containing '{word}': {n_total}")
+    print(f"  Batch size (PROFESSION_CONTEXTS)   : {PROFESSION_CONTEXTS}")
+    print(f"  Full batches                        : {n_batches}")
+    print(f"  Leftover sentences (unused)         : {n_leftover}")
+
+    if n_batches == 0:
+        print(f"\n  ✗ Not enough sentences for even one batch.")
+        print(f"    Need {PROFESSION_CONTEXTS}, found {n_total}.")
+        return
+
+    # ── Build gender geometry ONCE ────────────────────────────────────────────
+    print(f"\nBuilding gender geometry (computed once, shared across all {n_batches} batches)…")
+    male_centroids, female_centroids, directions = build_gender_geometry(
+        model, tokenizer, corpus, male_words, female_words,
+        ANCHOR_CONTEXTS, verbose=False
+    )
+    print(f"  ✓ Done — {len(directions)} layers")
+
+    # ── Write index file ──────────────────────────────────────────────────────
+    index_path = output_dir / f"debug_{word}_index.txt"
+    with open(index_path, "w", encoding="utf-8") as f:
+        f.write(f"Batch index  |  '{word}'  |  {lang}  |  {MODEL_NAME}\n")
+        f.write("="*60 + "\n")
+        f.write(f"  Total sentences containing '{word}': {n_total}\n")
+        f.write(f"  Batch size                          : {PROFESSION_CONTEXTS}\n")
+        f.write(f"  Full batches                        : {n_batches}\n")
+        f.write(f"  Leftover (unused)                   : {n_leftover}\n\n")
+        for bi, batch in enumerate(batches):
+            indices = [idx for idx, _ in batch]
+            f.write(f"  Batch {bi:02d}: rows {indices[0]:5d}–{indices[-1]:5d}  "
+                    f"({len(indices)} sentences)\n")
+    print(f"  ✓ Index written → {index_path.name}")
+
+    # ── Per-batch log files ───────────────────────────────────────────────────
+    print(f"\nGenerating {n_batches} batch log files…")
+    for batch_id, batch in enumerate(batches):
+        log_path = output_dir / f"debug_{word}_batch{batch_id:02d}.txt"
+        tee = Tee(str(log_path))
+        sys.stdout = tee
+        _write_batch_debug(
+            lang, word, batch_id, n_batches, batch,
+            tokenizer, model, corpus, male_words, female_words,
+            male_centroids, female_centroids, directions
+        )
+        tee.close()
+        print(f"  [{batch_id+1:2d}/{n_batches}] ✓ {log_path.name}")
+
+    print(f"\nDone! {n_batches} batch files + index saved to: {output_dir}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
