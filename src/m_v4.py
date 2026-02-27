@@ -88,7 +88,7 @@ MODEL_NAME = "xlm-roberta-base"          # ← switch model here
 # ── Run mode ───────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace — use to understand the pipeline
 # "bulk"  → all professions, progress line per word — use for paper results
-MODE = "debug"
+MODE = "bulk"
 
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
 # Set to any profession term from your professions CSV.
