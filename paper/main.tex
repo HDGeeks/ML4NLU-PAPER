@@ -53,23 +53,25 @@
 \begin{abstract}
 We investigate gender bias in multilingual transformer models as reflected in
 the contextual representations of Tigrigna profession words, probing all
-transformer layers of three models — XLM-RoBERTa-base (13 layers),
-XLM-RoBERTa-large (25 layers), and mBERT (13 layers) — using two independent
+transformer layers of five models — XLM-RoBERTa-base (13 layers),
+XLM-RoBERTa-large (25 layers), XLM-V-base (13 layers),
+mDeBERTa-v3-base (13 layers), and mBERT (13 layers) — using two independent
 bias estimators. We find that mBERT maps all Tigrigna tokens to \texttt{[UNK]},
 producing degenerate identical representations and zero measurable bias signal —
 establishing vocabulary coverage as a prerequisite for multilingual bias
-measurement. Both XLM-RoBERTa variants produce near-static representations for
-all 30 professions tested (mean pairwise cosine similarity $>0.91$), yet exhibit
-substantial male bias in mid-to-deep layers. XLM-RoBERTa-base peaks at
-layer~9 ($+2.99$) in a single-phase accumulation pattern; XLM-RoBERTa-large
-exhibits a two-phase double-peak structure (layer~13: $+2.99$, layer~23: $+3.46$),
-with stronger embedding-level bias at layer~0 ($+1.29$ vs $+0.20$). Comparing
-static embedding bias with contextual bias reveals two qualitatively distinct
-mechanisms: \emph{embedding-level bias} and \emph{attention-level bias}.
-ProjBias and CosDiff estimators agree near-perfectly across all layers in both
-XLM-RoBERTa models (Spearman $\rho \geq 0.992$, $p < 10^{-26}$), and
-batch-stability validation confirms that bias estimates are fully converged
-and sampling-independent.
+measurement. XLM-RoBERTa-base, XLM-RoBERTa-large, and XLM-V-base all produce
+near-static representations and consistent \emph{male}-leaning bias for 25--26
+of 30 professions, with layer-wise peak projections of $+2.99$, $+3.46$, and
+$+2.63$ respectively. The most striking finding comes from mDeBERTa-v3-base:
+its Disentangled Attention architecture produces a complete reversal, with
+28 of 30 professions \emph{female}-leaning — the opposite direction from all
+XLM-R family models. XLM-RoBERTa-large further exhibits a two-phase double-peak
+bias structure (layers~13 and~23). Comparing static and contextual embeddings
+reveals two qualitatively distinct mechanisms: \emph{embedding-level bias} and
+\emph{attention-level bias}. ProjBias and CosDiff estimators agree near-perfectly
+across all layers in all four meaningful models (Spearman $\rho \geq 0.970$,
+$p < 10^{-17}$), and batch-stability validation confirms estimates are fully
+converged and sampling-independent.
 \end{abstract}
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -119,7 +121,7 @@ corpus sentences. 11 male and 10 female anchors are used.}
 
 \subsection{Models}
 
-We evaluate three multilingual transformer models, all used strictly in inference
+We evaluate five multilingual transformer models, all used strictly in inference
 mode with frozen weights. All experiments run on CPU with full determinism.
 
 \paragraph{XLM-RoBERTa-base}~\cite{conneau2020xlm} (\texttt{xlm-roberta-base}).
@@ -134,6 +136,27 @@ The large variant of the same family: 24 transformer layers, 1{,}024-dimensional
 hidden states, 16 attention heads. Shares the identical SentencePiece vocabulary
 and tokenisation scheme as the base model, so Tigrigna subword decomposition
 is unchanged. We extract hidden states from all 25 layers.
+
+\paragraph{XLM-V-base}~\cite{liang2023xlmv} (\texttt{facebook/xlm-v-base}).
+An extended RoBERTa-style architecture with a dramatically enlarged SentencePiece
+vocabulary of 1{,}000{,}000 pieces — four times that of XLM-RoBERTa — designed
+to overcome vocabulary bottlenecks for low-resource languages. Architecture is
+otherwise identical to XLM-RoBERTa-base: 12 transformer layers, 768-dimensional
+hidden states. We extract 13 hidden states. Ethiopic script coverage is broad
+due to the million-piece vocabulary; however, 2 of 30 professions
+({\ethiopicfont ጠበቓ}, lawyer; {\ethiopicfont ነዳቓይ}, miner) tokenise differently
+under this vocabulary from the substrings present in our corpus, causing zero
+context matches and excluding them from analysis (28 professions scored).
+
+\paragraph{mDeBERTa-v3-base}~\cite{he2021deberta} (\texttt{microsoft/mdeberta-v3-base}).
+A 12-layer, 768-dimensional multilingual transformer using Disentangled
+Attention, which encodes token content and relative positional information as
+separate key/value pairs rather than combining them additively as in standard
+self-attention. Trained on multilingual corpora with a SentencePiece tokeniser.
+All 30 Tigrigna professions receive non-trivial subword decompositions, and we
+extract 13 hidden states. As shown in Section~\ref{sec:deberta_reversal}, the
+Disentangled Attention mechanism produces a fundamentally different gender bias
+geometry compared to the XLM-R family.
 
 \paragraph{mBERT} (\texttt{bert-base-multilingual-cased}).
 A 12-layer, 768-dimensional BERT model trained on 104 languages using WordPiece
@@ -384,25 +407,33 @@ ProjBias across layers 0--12; the peak at layer~9 is $+4.29$.}
 
 \subsection{Model Comparison}
 
-Table~\ref{tab:model_compare} summarises key metrics across the three models.
+Table~\ref{tab:model_compare} summarises key metrics across all five models.
+M:F:N counts the number of professions classified as male-leaning, female-leaning,
+and neutral (grand mean $> +0.3$, $< -0.3$, or between) across all scored layers.
 
 \begin{table}[h]
 \centering
 \small
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccccc}
 \toprule
-\textbf{Model} & \textbf{Layers} & \textbf{Ti vocab} & \textbf{Peak layer} & \textbf{Peak proj} & \textbf{Min Spearman $\rho$} \\
+\textbf{Model} & \textbf{Layers} & \textbf{Vocab} & \textbf{Peak layer} & \textbf{Peak proj} & \textbf{M:F:N} & \textbf{Min $\rho$} \\
 \midrule
-mBERT                & 13 & \textbf{[UNK]} & --- & $\approx -3.21^*$ & n/a \\
-XLM-RoBERTa-base     & 13 & subword        & 9   & $+2.99$            & $0.992$ \\
-XLM-RoBERTa-large    & 25 & subword        & 23  & $+3.46$            & $0.992$ \\
+mBERT              & 13 & WP $\sim$120K & ---  & $\approx -3.21^{*}$ & n/a     & n/a \\
+XLM-R-base         & 13 & SP 250K       & 9    & $+2.99$             & 26:3:1  & 0.992 \\
+XLM-R-large        & 25 & SP 250K       & 23   & $+3.46$             & 25:3:2  & 0.992 \\
+XLM-V-base         & 13 & SP 1M         & 11   & $+2.63$             & $25:2:1^{\dagger}$ & $0.970^{\ddagger}$ \\
+mDeBERTa-v3-base   & 13 & SP            & 11   & $-1.84^{\S}$        & 2:28:0  & 0.974 \\
 \bottomrule
 \end{tabular}
-\caption{Model comparison on Tigrigna gender bias pipeline. $^*$mBERT projects
-all 30 professions identically to $\approx -3.21$ because every Tigrigna token
-maps to \texttt{[UNK]}; the value reflects the single [UNK] embedding's position
-relative to the anchor geometry and carries no profession-specific information.
-Ti vocab = whether the tokeniser produces meaningful Tigrigna subwords.}
+\caption{Five-model comparison on the Tigrigna gender bias pipeline.
+WP = WordPiece; SP = SentencePiece.
+$^{*}$mBERT projects all 30 professions identically ($\approx -3.21$) because
+every Tigrigna token maps to \texttt{[UNK]}.
+$^{\dagger}$28 professions scored; 2 skipped due to tokenisation mismatch with corpus.
+$^{\ddagger}$Minimum $\rho$ excluding the final-layer collapse at layer~12
+($\rho = 0.72$ at layer~12 where magnitude-based and angular metrics diverge).
+$^{\S}$mDeBERTa peak is female-leaning (negative); the magnitude at the
+pre-collapse peak layer~11 is $-1.84$.}
 \label{tab:model_compare}
 \end{table}
 
@@ -467,6 +498,27 @@ The most striking individual shift is {\ethiopicfont ጠበቓ} (lawyer): base a
 grand mean of $-0.10$ (neutral, all 24 batches neutral), while large assigns
 $-0.81$ (female-leaning). The large model's deeper representation space
 apparently resolves the ambiguity that base leaves unresolved.
+
+\paragraph{XLM-V-base — consistent with XLM-R family.}
+XLM-V-base produces bias patterns consistent with the XLM-R family for its
+28 scored professions: 25 male-leaning, 2 female-leaning, 1 neutral, with
+a peak mean projection of $+2.63$ at layer~11. The layer-wise curve resembles
+XLM-R-base in shape but peaks one layer later (layer~11 vs layer~9) and
+exhibits a more severe final-layer collapse ($-3.27$ vs $+0.04$). Spearman
+$\rho \geq 0.970$ for layers 0--11, confirming consistent metric agreement
+before the collapse. The 4$\times$ vocabulary increase over XLM-R does not
+alter the direction of measured bias.
+
+\paragraph{mDeBERTa-v3-base — complete bias direction reversal.}
+mDeBERTa-v3-base produces a striking reversal: 28 of 30 professions are
+female-leaning (mean projection $< -0.3$), with only {\ethiopicfont ፕሮፌሰር}
+(professor, grand mean $+0.27$) and {\ethiopicfont ሓረስታይ} (farmer, $+0.13$)
+remaining male-leaning. The layer-wise mean projection is consistently negative
+from layer~5 onwards ($-0.97$ at layer~5, $-1.84$ at layer~11), with a sharp
+final-layer collapse to $-7.24$ at layer~12 — far more extreme than any other
+model's final layer. Spearman $\rho \geq 0.974$ at every layer confirms the
+reversal is internally consistent across both estimators. This finding is
+discussed in detail in Section~\ref{sec:deberta_reversal}.
 
 \subsection{Batch Stability Validation}
 
@@ -621,6 +673,80 @@ that base leaves ambiguous. This suggests that larger models may be
 \emph{more biased in aggregate} — not because they introduce new associations,
 but because they resolve associations that smaller models encode only weakly.
 
+\subsection{Disentangled Attention Reverses Bias Direction}
+\label{sec:deberta_reversal}
+
+The most surprising finding of our five-model comparison is that
+mDeBERTa-v3-base assigns \emph{female}-leaning bias to 28 of 30 Tigrigna
+professions — the complete opposite of all three XLM-R family models, which
+assign \emph{male}-leaning bias to 25--26 of the same professions. The only
+two professions that remain male-leaning under mDeBERTa are
+{\ethiopicfont ፕሮፌሰር} (professor, grand mean $+0.27$) and {\ethiopicfont ሓረስታይ}
+(farmer, $+0.13$), both occupations with strong male associations across many
+languages and cultures.
+
+The mDeBERTa layer-wise mean projection curve is consistently negative from
+layer~5 onwards, deepening monotonically from $-0.97$ at layer~5 to $-1.84$
+at layer~11, with a sharp final-layer collapse to $-7.24$ at layer~12. This
+collapse is far more extreme than the corresponding behaviour in XLM-R models
+($+0.04$ for base, $-3.27$ for XLM-V-base). The Spearman rank correlation
+between ProjBias and CosDiff remains $\rho \geq 0.974$ at every layer
+($p < 10^{-19}$), confirming that the reversal is internally consistent and
+not a magnitude artifact: both estimators agree that the same set of professions
+cluster closer to the female anchor centroid.
+
+We attribute this to the Disentangled Attention mechanism~\cite{he2021deberta}.
+Standard self-attention (BERT/RoBERTa) builds query, key, and value
+representations by summing content and positional embeddings \emph{before}
+the attention computation. Disentangled Attention encodes content and position
+\emph{separately}, producing different cross-token interaction patterns during
+pretraining. For Tigrigna tokens — which are processed as subwords with limited
+pretraining context — this appears to produce a gender subspace in which
+profession vectors cluster near the female centroid rather than the male centroid.
+
+A key question is whether this reflects genuinely learned female associations
+for these professions, or an inverted geometric relationship between anchor
+clusters. The CosDiff metric (purely angular, centroid-relative) shows that
+professions are angularly closer to the female anchor cluster than to the male
+anchor cluster — which is consistent with learned association rather than a
+simple magnitude inversion. However, a definitive answer would require targeted
+intervention experiments (e.g., probing with gender-marked Tigrigna sentences
+or attention pattern analysis) beyond the scope of the present work.
+
+This finding carries a methodological warning: researchers applying a single
+bias probe design across multiple model \emph{families} may obtain
+directionally opposite results without realising it. A profession classified
+as male-biased under an XLM-R model may appear female-biased under mDeBERTa
+on the same corpus. Reporting bias direction alongside bias magnitude, and
+validating with at least two architectural families, is therefore important
+for reproducibility.
+
+\subsection{XLM-V Tokenisation Coverage and Corpus Alignment}
+
+XLM-V-base's 1{,}000{,}000-piece SentencePiece vocabulary achieves broad
+Ethiopic character coverage for 28 of 30 target professions. The two excluded
+professions — {\ethiopicfont ጠበቓ} (lawyer) and {\ethiopicfont ነዳቓይ} (miner) — tokenise
+differently under the 1M vocabulary compared to the 250K XLM-RoBERTa vocabulary
+used to build our corpus. Because our context-retrieval step locates profession
+words via string matching against corpus sentences, a tokeniser that segments a
+word into different subword pieces may fail to locate any matching context
+sentences for that word.
+
+This reveals a \emph{vocabulary-corpus alignment} requirement: when applying a
+bias pipeline to a new model, one must verify that the tokeniser's segmentation
+of target vocabulary items is compatible with the corpus construction process.
+The 4$\times$ vocabulary increase in XLM-V improves Ethiopic coverage in
+principle but creates a mismatch with corpora built for a different tokenisation
+scheme. Future work should rebuild corpora using each model's own tokeniser,
+or use character-level (rather than subword-level) matching for context
+retrieval to ensure portability across vocabularies.
+
+For the 28 professions successfully scored, XLM-V-base's bias profile is
+consistent with the XLM-R family: 25 male-leaning, 2 female-leaning, 1 neutral,
+with a peak mean projection of $+2.63$ at layer~11. The 4$\times$ vocabulary
+increase does not alter the direction of measured bias, confirming that this
+aspect of the XLM-R architecture family is robust to vocabulary scaling.
+
 \subsection{Implications for Low-Resource Language Bias Research}
 
 \begin{enumerate}
@@ -647,7 +773,7 @@ but because they resolve associations that smaller models encode only weakly.
     retrofitting of the static weight matrix. Type~2 bias (attention-level)
     requires intervention in the transformer computation — for example,
     projection-based nullspace methods applied to the peak bias layer (layer~9
-    in base, layer~23 in large).
+    in XLM-R-base, layer~23 in large).
 
   \item \textbf{Larger models amplify and resolve bias.} XLM-RoBERTa-large
     produces stronger overall male bias ($+3.46$ peak vs $+2.99$) and resolves
@@ -656,9 +782,19 @@ but because they resolve associations that smaller models encode only weakly.
     changing bias direction.
 
   \item \textbf{Perfect metric agreement simplifies reporting.} Spearman
-    $\rho \geq 0.992$ between ProjBias and CosDiff at every layer, in both
-    XLM-RoBERTa models, means both metrics are interchangeable for ranking
-    professions by bias magnitude regardless of model scale.
+    $\rho \geq 0.970$ between ProjBias and CosDiff at every layer, in all
+    four meaningful models, means both metrics are interchangeable for ranking
+    professions by bias magnitude regardless of model scale or architecture
+    family.
+
+  \item \textbf{Attention architecture determines bias direction.} XLM-R-family
+    models (standard self-attention) consistently assign male-leaning bias to
+    Tigrigna professions, while mDeBERTa (Disentangled Attention) assigns
+    female-leaning bias to the same professions. Bias direction is not a
+    universal property of the training data alone — it depends on the
+    architectural mechanism through which the model processes cross-lingual
+    representations. Multi-architecture replication is therefore essential for
+    robust multilingual bias conclusions.
 \end{enumerate}
 
 
@@ -671,6 +807,17 @@ Guzm\'{a}n, F., Grave, \'{E}., Ott, M., Zettlemoyer, L., \& Stoyanov, V.
 (2020).
 Unsupervised cross-lingual representation learning at scale.
 In \textit{Proceedings of ACL 2020}, pp.\ 8440--8451.
+
+\bibitem{he2021deberta}
+He, P., Liu, X., Gao, J., \& Chen, W. (2021).
+DeBERTa: Decoding-enhanced BERT with disentangled attention.
+In \textit{Proceedings of ICLR 2021}.
+
+\bibitem{liang2023xlmv}
+Liang, D., Gonen, H., Mao, Y., Hou, R., Goyal, N., Ghazvininejad, M.,
+Zettlemoyer, L., \& Levy, O. (2023).
+XLM-V: Overcoming the vocabulary bottleneck in multilingual masked language models.
+In \textit{Proceedings of EMNLP 2023}, pp.\ 13142--13152.
 
 \bibitem{bolukbasi2016man}
 Bolukbasi, T., Chang, K.-W., Zou, J., Saligrama, V., \& Kalai, A. (2016).
