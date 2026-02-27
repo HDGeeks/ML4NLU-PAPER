@@ -786,8 +786,9 @@ def main():
     job_titles               = load_professions(LANGUAGE)
 
     print("Loading model…")
-    # local_files_only=True uses the cached model without any network call
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
+    # use_fast=False required for mDeBERTa-v3 (SentencePiece needs protobuf)
+    use_fast = "deberta" not in MODEL_NAME.lower()
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True, use_fast=use_fast)
     model     = AutoModel.from_pretrained(MODEL_NAME,     local_files_only=True)
     model.eval()
 
