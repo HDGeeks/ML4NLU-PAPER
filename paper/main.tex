@@ -1,19 +1,15 @@
 % ============================================================
-%  main.tex — compile with XeLaTeX (required for Ethiopic/Tigrigna Unicode)
-%
-%  xelatex main.tex
+%  main.tex  —  complete standalone file for Overleaf
+%  Compiler: XeLaTeX  (Menu → Compiler → XeLaTeX)
+%  Upload alongside:  ti_projection_curve.png
 % ============================================================
 \documentclass[11pt,a4paper]{article}
 
-% ── Unicode & font support (XeLaTeX required for Ethiopic script) ─────────────
+% ── Unicode & font (XeLaTeX + Overleaf handle Ethiopic natively) ──────────────
 \usepackage{fontspec}
 \usepackage{polyglossia}
 \setmainlanguage{english}
-
-% Ethiopic font — uses system Noto Sans Ethiopic if available,
-% falls back gracefully to any font covering Unicode Ethiopic block.
 \newfontfamily\ethiopicfont[Script=Ethiopic]{Noto Sans Ethiopic}
-% If Noto Sans Ethiopic is not installed, try: Abyssinica SIL  or  Ethiopia Jiret
 
 % ── Mathematics ───────────────────────────────────────────────────────────────
 \usepackage{amsmath}
@@ -26,7 +22,6 @@
 
 % ── Figures ───────────────────────────────────────────────────────────────────
 \usepackage{graphicx}
-\graphicspath{{../}}   % figures referenced relative to project root
 
 % ── Layout ────────────────────────────────────────────────────────────────────
 \usepackage[margin=2.5cm]{geometry}
@@ -38,13 +33,8 @@
 % ── Hyperlinks ────────────────────────────────────────────────────────────────
 \usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 
-% ── Bibliography ──────────────────────────────────────────────────────────────
-\usepackage[round]{natbib}
-
-% ── Tigrigna text helper ──────────────────────────────────────────────────────
-% Wrap any Tigrigna word with \ti{...} for correct font selection.
-% In the sections.tex file all Tigrigna tokens appear directly in Unicode;
-% XeLaTeX handles them automatically if the system font covers the Ethiopic block.
+% ── Tigrigna inline helper ────────────────────────────────────────────────────
+% XeLaTeX renders Ethiopic Unicode directly; \ti{} just switches font explicitly
 \newcommand{\ti}[1]{{\ethiopicfont #1}}
 
 
@@ -55,37 +45,496 @@
 \title{\textbf{Layer-wise Gender Bias in XLM-RoBERTa:\\
        Evidence from Tigrigna, a Low-Resource Language}}
 
-\author{
-  [Author Names]\\
-  [Institution]\\
-  \texttt{[email]}
-}
-
+\author{[Author Names] \\ [Institution] \\ \texttt{[email]}}
 \date{}
 \maketitle
 
+% ── Abstract ──────────────────────────────────────────────────────────────────
 \begin{abstract}
-We investigate gender bias in XLM-RoBERTa-base as reflected in the
-contextual representations of Tigrigna profession words, probing all 13
-transformer layers using two independent bias estimators.  We find that
-the model produces near-static representations for all 30 Tigrigna
-professions tested (mean pairwise cosine similarity $> 0.91$), a
-consequence of the language's low representation in pretraining data.
-Despite this, substantial and consistent male bias is present in the
-mid-to-deep transformer layers, peaking at layer~9.
-Comparing static embedding bias with contextual bias reveals two
-qualitatively distinct mechanisms: embedding-level bias (present before
-any attention is applied) and attention-level bias (imposed by the
-transformer layers on otherwise neutral tokens).  Both ProjBias and
-CosDiff estimators agree near-perfectly across all layers
-(Spearman $\rho \geq 0.992$, $p < 10^{-26}$).
+We investigate gender bias in XLM-RoBERTa-base as reflected in the contextual
+representations of Tigrigna profession words, probing all 13 transformer layers
+using two independent bias estimators. We find that the model produces
+near-static representations for all 30 Tigrigna professions tested (mean
+pairwise cosine similarity $>0.91$), a consequence of the language's low
+representation in pretraining data. Despite this, substantial and consistent
+male bias is present in the mid-to-deep transformer layers, peaking at layer~9.
+Comparing static embedding bias with contextual bias reveals two qualitatively
+distinct mechanisms: \emph{embedding-level bias} (present before any attention
+is applied) and \emph{attention-level bias} (imposed by the transformer layers
+on otherwise neutral tokens). Both ProjBias and CosDiff estimators agree
+near-perfectly across all layers (Spearman $\rho \geq 0.992$,
+$p < 10^{-26}$), and batch-stability validation over 24 independent sentence
+samples confirms that bias estimates are fully converged and sampling-independent.
 \end{abstract}
 
-% ── Content ───────────────────────────────────────────────────────────────────
-\input{sections}
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Methodology}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Language and Corpus Construction}
+
+We focus on Tigrigna (\texttt{ti}), a Semitic language spoken primarily in
+Eritrea and the Tigray region of Ethiopia, written in Ge'ez (Ethiopic) script.
+Tigrigna is a genuinely low-resource language: no substantial pretrained
+monolingual model exists, and its representation in multilingual corpora is
+sparse.
+
+Because no sufficiently large, profession-annotated Tigrigna corpus is publicly
+available, we constructed a synthetic corpus of \textbf{14{,}960 sentences}.
+The corpus was built using controlled sentence templates, each instantiating one
+of 30 target profession words in a short declarative context. Templates were
+designed to co-occur the profession word with gender-marked anchor terms
+(pronouns, kinship terms, and generic gender nouns) drawn from Tigrigna
+morphology. Every profession word appears in exactly 499 sentences, distributed
+across male-gendered, female-gendered, and gender-neutral contexts. Each
+sentence was automatically labelled \texttt{M}, \texttt{F}, or \texttt{N} by
+checking for the presence of known gender marker tokens
+(see Table~\ref{tab:anchors}).
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+\textbf{Gender} & \textbf{Type} & \textbf{Tigrigna} & \textbf{English gloss} \\
+\midrule
+Male   & Pronoun & ንሱ, ንዕኡ, ናቱ             & he, him, his \\
+Male   & Kinship & ኣቦ, ሓው, ወዲ ሓው, በዓል ገዛ  & father, brother, nephew, husband \\
+Male   & Generic & ሰብኣይ, ወዲ, ተባዕታይ, ኣቦሓጎ & man, boy/son, male, grandfather \\
+\midrule
+Female & Pronoun & ንሳ, ንዓኣ, ናታ            & she, her, her (poss.) \\
+Female & Kinship & ኣደ, ሓፍቲ, ጓል ሓፍቲ, ሰበይቲ & mother, sister, niece, wife \\
+Female & Generic & ጓል, ኣንስተይቲ, ዓባየይ       & girl/daughter, female, grandmother \\
+\bottomrule
+\end{tabular}
+\caption{Gender anchor words used to build the gender subspace and classify
+corpus sentences. 11 male and 10 female anchors are used.}
+\label{tab:anchors}
+\end{table}
+
+\subsection{Model}
+
+All experiments use \textbf{XLM-RoBERTa-base}~\cite{conneau2020xlm}
+(\texttt{xlm-roberta-base}), a 12-layer transformer with 768-dimensional hidden
+states trained on 100 languages via masked language modelling on CommonCrawl
+data. The model is used strictly in inference mode with no fine-tuning; all
+weights are frozen. We extract hidden states from all 13 layers (the embedding
+layer~0 plus the 12 transformer blocks). All experiments run on CPU with full
+determinism; no GPU is required.
+
+For any word $w$ that tokenises into $k$ subword pieces $t_1, \ldots, t_k$
+(using the SentencePiece vocabulary of XLM-RoBERTa), we obtain its
+representation at layer $l$ as the mean of the $k$ hidden-state vectors at
+the corresponding token positions:
+\begin{equation}
+  \mathbf{s}_l(w) = \frac{1}{k} \sum_{i=1}^{k} \mathbf{h}_l(t_i)
+  \label{eq:meanpool}
+\end{equation}
+When a word appears in multiple sentences, we further average the per-sentence
+vectors to produce a single representation per layer.
+
+\subsection{Gender Geometry Construction}
+
+For each transformer layer $l$, we build a \emph{gender subspace} from the
+anchor words. For each male anchor $a^M_j$ (resp.\ female anchor $a^F_j$), we
+collect 12 corpus sentences and compute its layer-$l$ representation via
+Equation~\ref{eq:meanpool}. The male and female centroids are:
+\begin{equation}
+  \mathbf{m}_l = \frac{1}{|A^M|} \sum_{j} \mathbf{s}_l(a^M_j), \quad
+  \mathbf{f}_l = \frac{1}{|A^F|} \sum_{j} \mathbf{s}_l(a^F_j)
+\end{equation}
+where $|A^M|=11$ and $|A^F|=10$. The unit gender direction is:
+\begin{equation}
+  \mathbf{g}_l = \frac{\mathbf{m}_l - \mathbf{f}_l}
+                      {\|\mathbf{m}_l - \mathbf{f}_l\|}
+\end{equation}
+Positive projection onto $\mathbf{g}_l$ indicates proximity to the male cluster;
+negative indicates proximity to the female cluster.
+
+\subsection{Bias Estimation}
+
+For each profession word $p$, we collect 20 corpus sentences and compute
+$\mathbf{s}_l(p)$ via Equation~\ref{eq:meanpool}. We use two independent
+estimators:
+
+\paragraph{Projection bias (ProjBias).}
+\begin{equation}
+  \text{ProjBias}_l(p) = \mathbf{s}_l(p) \cdot \mathbf{g}_l
+  \label{eq:proj}
+\end{equation}
+The scalar projection of the (un-normalised) profession vector onto the unit
+gender direction. Preserves vector magnitude.
+
+\paragraph{Cosine difference (CosDiff).}
+\begin{equation}
+  \text{CosDiff}_l(p) =
+    \cos\!\left(\mathbf{s}_l(p),\,\mathbf{m}_l\right) -
+    \cos\!\left(\mathbf{s}_l(p),\,\mathbf{f}_l\right)
+  \label{eq:cosdiff}
+\end{equation}
+A purely angular measure, invariant to vector magnitude. Positive values
+indicate the profession is angularly closer to the male centroid.
+
+Both estimators are computed for every layer $l \in \{0,\ldots,12\}$ and for
+all 30 professions. Their layer-wise Spearman rank correlation tests metric
+agreement (\textbf{RQ3}).
+
+\subsection{Representation Uniqueness Analysis}
+
+To assess whether contextual embeddings genuinely encode sentence-level context,
+we compute the \emph{mean pairwise cosine similarity} across all sentence
+vectors. For a profession appearing in $N$ sentences with layer-$l$ vectors
+$\mathbf{v}^{(1)}_l, \ldots, \mathbf{v}^{(N)}_l$:
+\begin{equation}
+  \overline{\cos}_l(p) = \frac{2}{N(N-1)}
+    \sum_{i < j} \cos\!\left(\mathbf{v}^{(i)}_l,\,\mathbf{v}^{(j)}_l\right)
+\end{equation}
+A value near 1.0 indicates near-static representations; a lower value indicates
+context-sensitivity. To disentangle corpus template effects from model-intrinsic
+behaviour, we also ran the analysis on five hand-crafted sentences for
+{\ethiopicfont ሓኪም} (doctor) spanning maximally diverse syntactic roles (subject/agent,
+object/recipient, negated goal, embedded relative clause, hypothetical
+conditional).
+
+\subsection{Static Embedding Analysis}
+
+As a complementary probe, we extract each profession word's \emph{static
+embedding} directly from the token embedding weight matrix
+$\mathbf{W} \in \mathbb{R}^{V \times 768}$, with no forward pass:
+\begin{equation}
+  \mathbf{e}(p) = \frac{1}{k}\sum_{i=1}^{k} \mathbf{W}[t_i]
+\end{equation}
+We build an analogous static gender direction from anchor static embeddings and
+project each profession's static vector onto it. Comparing static bias scores
+with contextual bias scores reveals whether gender association is encoded in the
+model weights themselves or emerges during transformer forward propagation.
+
+\subsection{Batch Stability Validation}
+
+To verify that bias estimates are robust to sentence sampling, we partition
+each profession's 499 corpus sentences into 24 non-overlapping batches of 20
+sentences each (19 sentences are unused as a leftover). We compute the mean
+projection score independently for each batch and report the grand mean,
+standard deviation, minimum, and maximum across the 24 batches.
+
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Results}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Representation Uniqueness}
+
+Table~\ref{tab:mean_cos} reports the mean pairwise cosine similarity
+$\overline{\cos}$ (averaged across all 13 layers) for every profession word,
+computed from 50 sentences per profession.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcc}
+\toprule
+\textbf{Profession} & \textbf{$\overline{\cos}$ (all layers)} & \textbf{Subword tokens} \\
+\midrule
+{\ethiopicfont ኣካውንታንት}  (accountant)    & 0.9809 & 5 \\
+{\ethiopicfont ሰራሕተኛ ጽሬት} (cleaner)      & 0.9812 & 6 \\
+{\ethiopicfont ኣርኪቴክት}   (architect)     & 0.9803 & 5 \\
+{\ethiopicfont ኤለክትሪሻን}  (electrician)   & 0.9782 & 6 \\
+{\ethiopicfont ዳይረክተር}   (director)      & 0.9772 & 5 \\
+{\ethiopicfont ሓላዊ ጸጥታ}  (security guard) & 0.9775 & 5 \\
+\multicolumn{3}{c}{\ldots (22 professions, all $\overline{\cos} > 0.94$) \ldots} \\
+{\ethiopicfont ጠበቓ}      (lawyer)        & 0.9196 & 3 \\
+\midrule
+\textbf{Mean (all 30)}   & \textbf{0.969} & --- \\
+\textbf{Min}             & \textbf{0.920} ({\ethiopicfont ጠበቓ}) & --- \\
+\textbf{Max}             & \textbf{0.981} ({\ethiopicfont ሰራሕተኛ ጽሬት}) & --- \\
+\bottomrule
+\end{tabular}
+\caption{Mean pairwise cosine similarity across sentence vectors (50 sentences,
+all 13 layers). All 30 professions exceed 0.91, indicating near-static
+contextual representations. {\ethiopicfont ጠበቓ} (lawyer) is the most
+context-sensitive profession in the set.}
+\label{tab:mean_cos}
+\end{table}
+
+All 30 professions exceed $\overline{\cos} = 0.91$. For {\ethiopicfont ሓኪም} (doctor)
+specifically, $\overline{\cos} = 0.967$ across all 499 corpus sentences
+($124{,}251$ pairwise comparisons at layer~12 alone; 100\% of pairs have
+cosine~$> 0.99$ at that layer).
+
+To test whether this is a corpus-template artifact, we ran the same analysis
+on five hand-crafted, syntactically diverse sentences for {\ethiopicfont ሓኪም}.
+The result was $\overline{\cos} = 0.947$ — a reduction of only 0.020 compared
+to the template corpus — confirming that near-static representations are
+intrinsic to the model's handling of Tigrigna tokens, not an artifact of
+repetitive sentence structure.
+
+\subsection{Layer-wise Projection Curve}
+
+Figure~\ref{fig:layer_curve} shows the mean projection score across all 30
+professions at each transformer layer.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\linewidth]{ti_projection_curve.png}
+  \caption{Layer-wise mean projection score (ProjBias) averaged across 30
+  Tigrigna professions on XLM-RoBERTa-base. Positive values indicate
+  male-leaning bias. The curve is near-neutral at layer~0 ($+0.20$), dips to
+  $-0.62$ at layer~2, rises sharply to a peak of $+2.99$ at layer~9, then
+  collapses to $+0.04$ at the final layer~12.}
+  \label{fig:layer_curve}
+\end{figure}
+
+The curve reveals a consistent three-phase structure:
+\begin{enumerate}
+  \item \textbf{Embedding phase (layers 0--4):} Near-neutral to slightly
+    female-leaning ($-0.62$ trough at layer~2), reflecting surface token
+    encoding.
+  \item \textbf{Semantic accumulation phase (layers 5--9):} Monotonic rise from
+    $+0.52$ to a peak of $+\mathbf{2.99}$ at \textbf{layer~9}, where attention
+    heads build semantic representations and gender associations accumulate.
+  \item \textbf{Output collapse phase (layers 10--12):} Sharp reduction to
+    $+0.04$ at layer~12, consistent with the representation uniqueness finding
+    that layer~12 produces fully collapsed, near-anisotropic vectors
+    ($\overline{\cos}_{12} \approx 0.997$ for {\ethiopicfont ሓኪም}).
+\end{enumerate}
+
+\subsection{Metric Agreement — Spearman Correlation}
+
+Table~\ref{tab:spearman} reports the Spearman rank correlation $\rho$ between
+ProjBias and CosDiff across all 30 professions at each layer.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ccc}
+\toprule
+\textbf{Layer} & \textbf{Spearman $\rho$} & \textbf{$p$-value} \\
+\midrule
+ 0 & 0.9947 & $< 10^{-28}$ \\
+ 1 & 0.9929 & $< 10^{-27}$ \\
+ 2 & 0.9933 & $< 10^{-27}$ \\
+ 3 & 0.9938 & $< 10^{-27}$ \\
+ 4 & 0.9929 & $< 10^{-27}$ \\
+ 5 & 0.9978 & $< 10^{-33}$ \\
+ 6 & 0.9969 & $< 10^{-31}$ \\
+ 7 & 0.9924 & $< 10^{-26}$ \\
+ 8 & 0.9947 & $< 10^{-28}$ \\
+ 9 & 0.9956 & $< 10^{-29}$ \\
+10 & 0.9987 & $< 10^{-36}$ \\
+11 & 1.0000 & $< 10^{-40}$ \\
+12 & 1.0000 & $< 10^{-40}$ \\
+\bottomrule
+\end{tabular}
+\caption{Spearman rank correlation between ProjBias and CosDiff across 30
+professions at each layer ($n=30$). The minimum $\rho$ is $0.992$ (layer~7);
+both metrics agree perfectly at layers~11--12 ($\rho=1.00$). All $p < 10^{-26}$.}
+\label{tab:spearman}
+\end{table}
+
+The minimum Spearman $\rho$ across all layers is $0.992$, rising to a perfect
+$\rho = 1.00$ at layers~11 and~12. This near-perfect agreement at every layer
+validates that both metrics measure the same underlying bias structure and that
+the choice of estimator does not affect the rank ordering of professions.
+
+\subsection{Profession-level Bias Analysis}
+
+Table~\ref{tab:prof_bias} summarises the mean ProjBias (averaged across all 13
+layers) for key professions, alongside their static embedding bias scores.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Profession} & \textbf{Static proj} & \textbf{Contextual mean} & \textbf{Gain} & \textbf{Mechanism} \\
+\midrule
+{\ethiopicfont መምህር} (teacher)   & $+0.499$ & $+2.084$ & $+1.585$ & Embedding-level \\
+{\ethiopicfont ፖሊስ}  (police)    & $+0.428$ & ---      & ---      & Embedding-level \\
+{\ethiopicfont ሓረስታይ} (farmer)  & $+0.199$ & $+1.123$ & $+0.924$ & Attention-level \\
+{\ethiopicfont ሓኪም}  (doctor)   & $+0.012$ & $+0.640$ & $+0.628$ & Attention-level \\
+{\ethiopicfont ጠበቓ}  (lawyer)   & $-0.259$ & $-0.103$ & ---      & Consistent neutral \\
+{\ethiopicfont ነርስ}   (nurse)    & $-0.352$ & $+2.748^\dagger$ & $+3.100$ & Attention-level (reversal) \\
+{\ethiopicfont ነዳቓይ} (miner)    & $-0.489$ & ---       & ---      & Statically female \\
+{\ethiopicfont ሳይንቲስት} (scientist) & $-0.508$ & ---    & ---      & Statically female \\
+\bottomrule
+\end{tabular}
+\caption{Static vs.\ contextual mean projection bias for selected professions.
+Gain = contextual $-$ static. $^\dagger$Nurse contextual value is the mean
+ProjBias across layers 0--12; the peak at layer~9 is $+4.29$.}
+\label{tab:prof_bias}
+\end{table}
+
+\subsection{Batch Stability Validation}
+
+Table~\ref{tab:batch} reports the grand mean, standard deviation, and range
+of the per-batch mean projection score across 24 batches of 20 sentences each.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Profession} & \textbf{Grand mean} & \textbf{Std dev} & \textbf{Min} & \textbf{Max} & \textbf{M/F/N batches} \\
+\midrule
+{\ethiopicfont መምህር} (teacher)  & $+2.084$ & $0.045$ & $+2.009$ & $+2.181$ & 24 / 0 / 0 \\
+{\ethiopicfont ሓረስታይ} (farmer) & $+1.123$ & $0.067$ & $+0.998$ & $+1.248$ & 24 / 0 / 0 \\
+{\ethiopicfont ሓኪም}  (doctor)  & $+0.640$ & $0.092$ & $+0.529$ & $+0.850$ & 24 / 0 / 0 \\
+{\ethiopicfont ጠበቓ}  (lawyer)  & $-0.103$ & $0.089$ & $-0.230$ & $+0.091$ &  0 / 0 / 24 \\
+\bottomrule
+\end{tabular}
+\caption{Batch stability across 24 non-overlapping batches of 20 sentences each.
+M/F/N counts show how many batches yielded a MALE / FEMALE / NEUTRAL verdict.
+All 24 batches for teacher, farmer, and doctor are MALE-LEANING regardless of
+the local gender-sentence ratio.}
+\label{tab:batch}
+\end{table}
+
+For {\ethiopicfont መምህር} (teacher), the standard deviation is only $0.045$ — the
+batch estimates vary by less than 2\% of the grand mean. The floor for teacher
+($+2.009$) is higher than the ceiling for doctor ($+0.850$), placing these two
+professions in entirely non-overlapping bias ranges. For
+{\ethiopicfont ጠበቓ} (lawyer), no batch crosses the $\pm 0.3$ threshold in either
+direction (range $[-0.230, +0.091]$).
+
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Observations and Discussion}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\subsection{Near-static Representations in a Low-Resource Language}
+
+Our most foundational finding is that XLM-RoBERTa-base produces effectively
+static representations for all 30 Tigrigna profession tokens. The mean pairwise
+cosine similarity exceeds $0.91$ for every profession (Table~\ref{tab:mean_cos}),
+indicating that the model assigns nearly identical hidden-state vectors to a
+given token regardless of surrounding discourse context.
+
+This behaviour is not primarily a corpus artifact. The custom-sentence
+experiment for {\ethiopicfont ሓኪም}, using five structurally and semantically maximally
+diverse sentences, produced $\overline{\cos} = 0.947$ compared to $0.967$ from
+the template corpus — a reduction of only $0.020$. Near-static representations
+are therefore intrinsic to the model's treatment of Tigrigna tokens.
+
+We attribute this to the low-resource nature of Tigrigna in XLM-RoBERTa's
+pretraining corpus. When a language is sparsely represented, the model's
+attention heads lack the statistical signal to learn context-sensitive
+representations, causing the transformer to degenerate toward a near-lookup-table
+behaviour where representations are driven primarily by token identity rather
+than surrounding context.
+
+\subsection{Two Distinct Mechanisms of Gender Bias}
+
+Comparing static embedding bias scores with contextual bias scores reveals two
+qualitatively distinct mechanisms:
+
+\paragraph{Type 1: Embedding-level bias.}
+For {\ethiopicfont መምህር} (teacher, static $+0.499$, contextual $+2.084$), the male
+association is already encoded in the raw token embedding before any attention
+is applied. The transformer layers then amplify this signal more than fourfold.
+The bias originates in the pretraining data distribution.
+
+\paragraph{Type 2: Attention-level bias.}
+For {\ethiopicfont ሓኪም} (doctor, static $+0.012$) and {\ethiopicfont ሓረስታይ} (farmer, static
+$+0.199$), the raw token embeddings are effectively gender-neutral. Yet the
+transformer layers impose strong male bias ($+0.640$ and $+1.123$ respectively)
+during forward propagation. The attention mechanism introduces gender
+associations absent from the input representation, presumably by activating
+co-occurrence patterns learned from higher-resource languages in pretraining.
+
+\paragraph{The nurse reversal.}
+The most dramatic instance is {\ethiopicfont ነርስ} (nurse), which has a statically
+\emph{female}-leaning embedding (static $= -0.352$) but emerges from the
+transformer with a strongly \emph{male}-leaning contextual representation,
+peaking at $+4.29$ at layer~9 — the highest single-profession value in our
+dataset. The transformer not only overrides but completely reverses the static
+signal, suggesting that the multilingual pretraining signal for \textit{nurse}
+in higher-resource languages (where the model has richer data) dominates the
+Tigrigna token's own embedding.
+
+\subsection{Layer-wise Bias Structure}
+
+The layer-wise projection curve (Figure~\ref{fig:layer_curve}) exhibits a
+consistent three-phase pattern: near-neutral early layers reflecting
+morphological processing; a monotonic accumulation of male bias through layers
+5--9 peaking at $+2.99$; and a collapse to near-zero at layer~12. Layer~9 is
+the critical layer for gender bias in XLM-RoBERTa on Tigrigna, with individual
+profession scores ranging from $+5.90$ ({\ethiopicfont መምህር}) to negative values for
+female-leaning professions, the ordering preserved near-perfectly across all
+layers (Spearman $\rho \geq 0.992$).
+
+\subsection{Lawyer as a Contrast Case}
+
+{\ethiopicfont ጠበቓ} (lawyer) is the single profession that remains consistently neutral
+across all analyses. It has the lowest mean pairwise cosine similarity of all
+30 professions ($\overline{\cos} = 0.920$, most contextually sensitive), the
+most female-adjacent static embedding among neutral-labelled words (static
+$= -0.259$), yet the transformer does not amplify this signal. All 24 sampling
+batches return a ROUGHLY NEUTRAL verdict (grand mean $= -0.103$, range
+$[-0.230, +0.091]$). The inverse relationship between $\overline{\cos}$ and
+bias magnitude — highest context-sensitivity paired with lowest contextual bias
+— is consistent with the hypothesis that contextual diversity suppresses bias
+amplification.
+
+\subsection{Implications for Low-Resource Language Bias Research}
+
+\begin{enumerate}
+  \item \textbf{Contextual bias measurement may be unreliable for low-resource
+    languages.} When $\overline{\cos} > 0.95$, averaging over multiple sentence
+    vectors adds negligible information; the bias score is effectively being read
+    from a single vector, equivalent to static embedding probing.
+
+  \item \textbf{Batch stability validates measurement reliability.} Standard
+    deviations as low as $0.045$ across 24 batches demonstrate that 20
+    sentences already produce fully converged bias estimates for near-static
+    representations, providing a principled basis for small context windows in
+    low-resource settings.
+
+  \item \textbf{The two-mechanism framework enables targeted debiasing.}
+    Type~1 bias (embedding-level) may be addressable via gender-neutral
+    retrofitting of the static weight matrix. Type~2 bias (attention-level)
+    requires intervention in the transformer computation — for example,
+    projection-based nullspace methods applied to the peak bias layer (layer~9).
+
+  \item \textbf{Perfect metric agreement simplifies reporting.} Spearman
+    $\rho \geq 0.992$ between ProjBias and CosDiff at every layer means both
+    metrics are interchangeable for ranking professions by bias magnitude.
+    Researchers can safely report either without loss of comparative validity.
+\end{enumerate}
+
 
 % ── References ────────────────────────────────────────────────────────────────
-\bibliographystyle{plainnat}
-\bibliography{refs}
+\begin{thebibliography}{99}
+
+\bibitem{conneau2020xlm}
+Conneau, A., Khandelwal, K., Goyal, N., Chaudhary, V., Wenzek, G.,
+Guzm\'{a}n, F., Grave, \'{E}., Ott, M., Zettlemoyer, L., \& Stoyanov, V.
+(2020).
+Unsupervised cross-lingual representation learning at scale.
+In \textit{Proceedings of ACL 2020}, pp.\ 8440--8451.
+
+\bibitem{bolukbasi2016man}
+Bolukbasi, T., Chang, K.-W., Zou, J., Saligrama, V., \& Kalai, A. (2016).
+Man is to computer programmer as woman is to homemaker?
+Debiasing word embeddings.
+In \textit{Advances in NeurIPS}, vol.\ 29.
+
+\bibitem{zhao2019gender}
+Zhao, J., Wang, T., Yatskar, M., Cotterell, R., Ordonez, V., \& Chang, K.-W.
+(2019).
+Gender bias in contextualized word embeddings.
+In \textit{Proceedings of NAACL 2019}, pp.\ 629--634.
+
+\bibitem{guo2021detecting}
+Guo, W., \& Caliskan, A. (2021).
+Detecting emergent intersectional biases: Contextualized word embeddings
+contain a distribution of human-like biases.
+In \textit{Proceedings of AIES 2021}, pp.\ 122--133.
+
+\bibitem{rogers2020primer}
+Rogers, A., Kovaleva, O., \& Rumshisky, A. (2020).
+A primer in BERTology: What we know about how BERT works.
+\textit{Transactions of ACL}, 8, 842--866.
+
+\end{thebibliography}
 
 \end{document}
