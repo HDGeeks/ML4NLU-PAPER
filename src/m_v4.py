@@ -93,6 +93,15 @@ MODEL_NAMES = [
 # Uncomment to run a single model only:
 # MODEL_NAMES = "xlm-roberta-base"
 
+# Short slugs used in output filenames (and main_v2.tex figure paths).
+MODEL_SLUG_MAP = {
+    "bert-base-multilingual-cased":  "mbert",
+    "xlm-roberta-base":              "xlmr_base",
+    "xlm-roberta-large":             "xlmr_large",
+    "facebook/xlm-v-base":           "xlmv_base",
+    "microsoft/mdeberta-v3-base":    "mdeberta",
+}
+
 # ── Run mode ───────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace — use to understand the pipeline
 # "bulk"  → all professions, progress line per word — use for paper results
@@ -707,7 +716,8 @@ def run_bulk(lang, tokenizer, model, corpus,
     bias_csv     = output_dir / f"{lang}_bias_by_layer.csv"
     spearman_csv = output_dir / f"{lang}_spearman_by_layer.csv"
     mean_csv     = output_dir / f"{lang}_projection_layer_mean.csv"
-    figure_png   = output_dir / "figs" / f"{lang}_projection_curve.png"
+    model_slug   = MODEL_SLUG_MAP.get(MODEL_NAME, MODEL_NAME.replace("/", "_"))
+    figure_png   = output_dir / "figs" / f"{lang}_{model_slug}_projection_curve.png"
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "figs").mkdir(parents=True, exist_ok=True)
 

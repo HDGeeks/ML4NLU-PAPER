@@ -1,0 +1,1129 @@
+\documentclass[10pt]{article}
+
+% =========================
+% Fonts & Encoding
+% =========================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[sc]{mathpazo}      % Palatino w/ small caps
+
+% =========================
+% Layout
+% =========================
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1em}
+
+% =========================
+% Floats / placement
+% =========================
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{subcaption}        % subfigure grids
+
+% =========================
+% Math & Tables
+% =========================
+\usepackage{amsmath,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage[table]{xcolor}
+
+% =========================
+% Figures & formatting
+% =========================
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+
+% =========================
+% Unicode helpers
+% =========================
+\usepackage{newunicodechar}
+\newunicodechar{Δ}{\ensuremath{\Delta}}
+\newunicodechar{−}{\ensuremath{-}}
+\newunicodechar{–}{--}
+\newunicodechar{—}{---}
+\newunicodechar{≤}{\ensuremath{\le}}
+\newunicodechar{≥}{\ensuremath{\ge}}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{ρ}{\ensuremath{\rho}}
+
+\errorcontextlines=20
+
+% =========================
+% Citations
+% =========================
+\usepackage[authoryear,round]{natbib}
+\setcitestyle{aysep={,},citesep={;},open={(},close={)}}
+\setcitestyle{maxcitenames=2,maxbibnames=99}
+
+% =========================
+% Hyperlinks (load late)
+% =========================
+\usepackage[colorlinks=true,
+            linkcolor=blue,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
+
+% =========================
+% Section formatting
+% =========================
+\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}
+
+% =========================
+% Header & footer
+% =========================
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Daniel Tesfai Kebede}
+\lhead{Layer-Wise Gender Bias in Multilingual Transformers}
+\cfoot{\thepage}
+
+% =========================
+% Metadata
+% =========================
+\newcommand{\faculty}{Faculty of Computational Linguistics and\\Digital Humanities}
+\newcommand{\papertitle}{Layer-Wise Gender Bias in Multilingual Foundation Models:\\A Five-Architecture Cross-Lingual Analysis}
+\newcommand{\authorname}{Daniel Tesfai Kebede}
+\newcommand{\matrnr}{1716694}
+\newcommand{\course}{Trends in Machine Learning}
+\newcommand{\instructor}{[Instructor Name]}
+\newcommand{\submissiondate}{[Submission Date]}
+
+\begin{document}
+
+% -------------------------------------------------------
+%  Page 1 — Title Page
+% -------------------------------------------------------
+\begin{titlepage}
+  \thispagestyle{empty}
+
+  \noindent
+  \begin{minipage}[t]{0.5\textwidth}
+    \vspace*{0pt}%
+    % \includegraphics[height=1.9cm]{media/Logo-Uni-Trier.jpg}
+    {\small University of Trier}
+  \end{minipage}%
+  \begin{minipage}[t]{0.5\textwidth}
+    \vspace*{0pt}\raggedleft
+    {\small \faculty}
+  \end{minipage}
+
+  \vfill
+  \begin{center}
+    {\Large\bfseries \papertitle\par}
+    \vspace{1em}
+    {\normalsize Seminar Paper\par}
+    \vspace{1.5em}
+    {\normalsize submitted by\par}
+    \vspace{0.6em}
+    {\normalsize \textbf{\authorname} (Matr.\ \matrnr)\par}
+  \end{center}
+  \vfill
+
+  {\normalsize
+   \textbf{Course:}\quad \course\\[0.3em]
+   \textbf{Submission:}\quad \submissiondate\\[0.3em]
+   \textbf{Instructor:}\quad \instructor
+  }
+\end{titlepage}
+
+% -------------------------------------------------------
+%  Page 2 — Table of Contents
+% -------------------------------------------------------
+\newpage
+\begingroup
+  \thispagestyle{empty}
+  \singlespacing
+  \setlength{\parskip}{0pt}
+  \setcounter{tocdepth}{2}
+  \tableofcontents
+\endgroup
+
+% -------------------------------------------------------
+%  Main Content
+% -------------------------------------------------------
+\newpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+% =======================================================
+\begin{abstract}
+% =======================================================
+
+Multilingual transformer models embed dozens of languages within shared
+representational spaces, enabling cross-lingual transfer while raising
+questions about how social associations are distributed across languages
+with unequal training data. Although gender bias in English embeddings has
+been extensively studied, comparatively little work examines how multilingual
+contextual models encode such associations across both high-resource and
+genuinely low-resource languages, or how those associations evolve across
+model depth.
+
+This study investigates gender bias in Tigrigna—a low-resource Ge'ez-script
+language—as a primary case study, with comparative analysis across Spanish
+and Arabic, using five multilingual transformer architectures:
+\texttt{bert-base-multilingual-cased} (mBERT),
+\texttt{xlm-roberta-base}, \texttt{xlm-roberta-large},
+\texttt{facebook/xlm-v-base}, and \texttt{microsoft/mdeberta-v3-base}.
+Contextual token representations are reduced to stable word-level embeddings
+via contextual-to-static aggregation \citep{bommasani2020reductions}, enabling
+layer-wise projection of profession terms onto a geometric gender direction
+\citep{bolukbasi2016man}.
+
+Our results reveal four key findings. First, four of five models encode
+measurable male-leaning bias for Tigrigna despite the language's absence
+from dedicated pretraining data. Second, bias accumulates progressively
+across transformer depth, peaking at layer~9 (base models) or layer~23
+(XLM-R-large). Third, two independent geometric estimators agree at
+$\rho \geq 0.970$ across all valid models, confirming methodological
+robustness. Fourth, and most strikingly, mDeBERTa-v3-base—trained on
+comparable multilingual data—produces a complete directional reversal:
+28 of 30 profession terms are female-leaning, with a mean projection of
+$-1.84$ at the peak layer. We attribute this reversal to mDeBERTa's
+Disentangled Attention mechanism, suggesting that architectural choices can
+override data-driven gender associations. All experiments require no
+fine-tuning and run on CPU using publicly released checkpoints.
+
+\end{abstract}
+
+% =======================================================
+\section{Introduction}
+% =======================================================
+
+Modern foundation models compress linguistic diversity into unified
+representational systems, embedding languages with radically different
+morphologies, scripts, and training data volumes within shared parameters.
+This architectural unification enables cross-lingual generalisation, yet it
+also raises a structural concern: when languages with unequal resource
+availability coexist within the same geometric space, how are social
+associations distributed across them? If representational capacity is
+unevenly shaped by pretraining data, then bias may not manifest uniformly
+across linguistic contexts.
+
+Gender bias in language models has traditionally been examined in English
+through static embedding analyses. These studies demonstrate that social
+associations can be recovered geometrically, suggesting that bias is encoded
+in the spatial structure of representations rather than at the surface level.
+Multilingual contextual models, however, introduce two additional dimensions.
+First, multilingual pretraining blends languages with vastly different resource
+profiles, making it unclear whether bias patterns generalise consistently.
+Second, transformer representations are layered and dynamic: meaning is
+progressively constructed across network depth rather than fixed at a single
+stage.
+
+A layer-wise perspective therefore becomes essential. Lower transformer layers
+tend to encode lexical and morphological features, while deeper layers capture
+increasingly abstract semantic relationships \citep{rogers2020primer,
+tenney-etal-2019-bert}. If gender associations evolve across layers, then bias
+is not merely inherited from surface statistics but may be actively reshaped
+during contextual processing. Crucially, different attention architectures may
+reshape this signal in fundamentally different ways---a hypothesis this paper
+directly tests.
+
+This study investigates gender bias as a joint cross-lingual, layer-wise, and
+architecture-comparative phenomenon. We evaluate five multilingual transformer
+models spanning three distinct vocabulary systems (WordPiece, SentencePiece
+250K, SentencePiece 1M), two model scales (base, large), and two attention
+mechanisms (standard multi-head, Disentangled Attention). Tigrigna---a
+low-resource Ge'ez-script language---serves as our primary case study because
+it provides a near-zero-shot setting: the models were not trained on Tigrigna
+corpora, making any detected bias attributable to subword geometry inherited
+from cross-lingual transfer rather than language-specific statistics.
+
+\subsection{Research Questions}
+
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \textbf{RQ1}: Do multilingual transformers encode measurable gender bias
+        across Arabic, Spanish, and Tigrigna under a unified geometric protocol?
+  \item \textbf{RQ2}: How does measured bias vary across transformer layers, and
+        at which depths do associations peak?
+  \item \textbf{RQ3}: Do two independent geometric estimators agree on bias
+        trends across languages and models?
+  \item \textbf{RQ4}: Does attention architecture determine the direction of
+        encoded gender bias, independent of pretraining data?
+\end{itemize}
+
+% =======================================================
+\section{Related Work}
+% =======================================================
+
+\subsection{Bias in Static Word Embeddings}
+
+Early work established that social biases are encoded in the geometric structure
+of static word embeddings. \citet{bolukbasi2016man} showed that a gender
+direction derived from anchor sets reveals systematic profession--gender
+associations and proposed projection-based debiasing. \citet{caliskan2017semantics}
+introduced the Word Embedding Association Test (WEAT), providing a statistical
+framework for measuring implicit associations. \citet{garg2018word} demonstrated
+that embedding bias correlates with historical societal trends. Later,
+\citet{gonen2019lipstick} showed that removing a single bias direction does not
+eliminate deeper geometric bias, motivating continued geometric analysis.
+
+\subsection{Interpreting Contextual Representations via Reductions}
+
+Transformer models produce contextualised representations that vary across
+input sentences and network depth, complicating direct application of
+geometric methods designed for static embeddings. \citet{bommasani2020reductions}
+formalised a framework for interpreting pretrained contextualised representations
+via reductions to static embeddings, demonstrating that contextual token
+embeddings can be systematically aggregated across occurrences to produce stable
+word-level vectors suitable for geometric analysis. \citet{rogers2020primer}
+surveys the uneven distribution of linguistic information across transformer
+layers, motivating layer-wise analysis of properties such as bias.
+
+\subsection{Multilingual Bias and Cross-Lingual Considerations}
+
+As multilingual transformers became widely adopted, bias analysis extended
+beyond English. \citet{dev2019measuring} examined bias across languages in
+multilingual embeddings, highlighting cross-lingual variation in association
+strength. \citet{lauscher2020zero} studied bias transfer in shared multilingual
+architectures, showing that associations from high-resource languages can
+propagate across the shared parameter space.
+
+However, existing multilingual bias studies typically evaluate only final-layer
+or pooled representations, rarely investigating how bias evolves across internal
+layers. Low-resource languages remain underrepresented, and no systematic
+evaluation compares attention architectures under a controlled protocol.
+
+\subsection{Architecture-Driven Effects on Representations}
+
+\citet{he2021deberta} introduced mDeBERTa-v3, whose Disentangled Attention
+separates content and positional information into independent attention matrices.
+This architectural choice substantially changes how contextual relationships are
+encoded across layers. Similarly, \citet{liang2023xlmv} showed that enlarging
+the SentencePiece vocabulary from 250K (XLM-R) to 1M tokens (XLM-V) improves
+tokenisation coverage across low-resource languages but can introduce
+corpus-alignment mismatches when the expanded vocabulary fragments tokens
+differently from the evaluation corpus.
+
+\subsection{How This Work Differs}
+
+We integrate geometric bias analysis \citep{bolukbasi2016man} with contextual-to-static
+reductions \citep{bommasani2020reductions} applied layer-wise across five
+multilingual architectures. The primary contribution is a controlled
+architecture comparison in the near-zero-shot setting of Tigrigna, revealing
+that the Disentangled Attention mechanism produces a complete reversal of gender
+bias direction---a finding not previously documented in the multilingual bias
+literature.
+
+% =======================================================
+\section{Methodology}
+% =======================================================
+
+\subsection{Models}
+
+We evaluate five pretrained multilingual transformer models without fine-tuning.
+All checkpoints are loaded from HuggingFace Hub; no parameter updates are
+performed.
+
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \textbf{mBERT} (\texttt{bert-base-multilingual-cased},
+        \citealt{devlin2019bert}): 12 transformer layers + embedding layer
+        (13 hidden states), WordPiece vocabulary of $\approx$120K tokens
+        covering 104 languages.
+  \item \textbf{XLM-RoBERTa-base} (\texttt{xlm-roberta-base},
+        \citealt{conneau2020unsupervised}): 12 layers (13 hidden
+        states), SentencePiece vocabulary of 250K tokens, trained on
+        CommonCrawl across 100 languages.
+  \item \textbf{XLM-RoBERTa-large} (\texttt{xlm-roberta-large},
+        \citealt{conneau2020unsupervised}): 24 layers (25 hidden
+        states), same 250K SentencePiece vocabulary, larger model scale.
+  \item \textbf{XLM-V-base} (\texttt{facebook/xlm-v-base},
+        \citealt{liang2023xlmv}): 12 layers (13 hidden states),
+        SentencePiece vocabulary of 1M tokens, designed to improve
+        tokenisation coverage for low-resource languages.
+  \item \textbf{mDeBERTa-v3-base} (\texttt{microsoft/mdeberta-v3-base},
+        \citealt{he2021deberta}): 12 layers (13 hidden states),
+        SentencePiece vocabulary, uses Disentangled Attention with separate
+        content and position matrices---the key architectural difference
+        examined in RQ4.
+\end{itemize}
+
+\subsection{Languages and Data}
+
+We analyse three languages: Spanish (\texttt{es}), Arabic (\texttt{ar}),
+and Tigrigna (\texttt{ti}).
+Tigrigna is the primary case study: it is a Semitic language written in
+the Ge'ez (Ethiopic) script, with negligible dedicated presence in
+multilingual pretraining corpora, making it a stringent near-zero-shot
+evaluation.
+
+For each language we provide:
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item A sentence-level corpus (one sentence per line).
+  \item A list of 30 profession terms with translations.
+  \item Gender anchor sets: 11 male and 10 female Tigrigna terms (pronouns,
+        kinship terms, generic gender markers).
+\end{itemize}
+
+\subsection{Context Sampling}
+
+For each target word $w$, we retrieve up to $n$ sentences containing $w$
+via substring matching. We use $n=50$ contexts for profession terms and
+$n=12$ for anchor terms to ensure stable centroid estimation within CPU
+memory constraints. Words with fewer than the minimum available contexts
+are excluded.
+
+\subsection{Contextual-to-Static Reduction}
+
+Transformer models produce contextualised token representations that vary
+across inputs and network depth. To enable geometric analysis, we adopt the
+reduction framework of \citet{bommasani2020reductions}, who demonstrate that
+contextual embeddings can be systematically aggregated to produce stable
+word-level vectors.
+
+For each occurrence of word $w$ in context $c_i$, we extract hidden states
+at every transformer layer. Subword token representations corresponding to
+$w$ are mean-pooled across the subword fragments; the result is then averaged
+across $n$ contexts. Formally, at layer $\ell$:
+
+\begin{equation}
+  \mathbf{s}_{\ell}(w)
+  =
+  \frac{1}{n}
+  \sum_{i=1}^{n}
+  \mathbf{h}_{\ell}(w, c_i),
+  \label{eq:reduction}
+\end{equation}
+
+where $\mathbf{h}_{\ell}(w, c_i)$ is the mean-pooled subword representation
+of $w$ at layer $\ell$ in context $c_i$ \citep{bommasani2020reductions}.
+This yields one static embedding per layer for each target word.
+
+\subsection{Gender Direction Construction}
+
+Following \citet{bolukbasi2016man}, we define a gender direction using
+predefined anchor sets. Let $\mathcal{M}$ and $\mathcal{F}$ denote the
+male and female anchor term sets. For each layer $\ell$, anchor
+representations are reduced as in Eq.~\eqref{eq:reduction}.
+Layer-specific centroids are:
+
+\begin{equation}
+  \mathbf{c}_{M,\ell}
+  =
+  \frac{1}{|\mathcal{M}|}
+  \sum_{w \in \mathcal{M}}
+  \mathbf{s}_{\ell}(w),
+  \qquad
+  \mathbf{c}_{F,\ell}
+  =
+  \frac{1}{|\mathcal{F}|}
+  \sum_{w \in \mathcal{F}}
+  \mathbf{s}_{\ell}(w),
+\end{equation}
+
+and the layer-specific gender direction is:
+
+\begin{equation}
+  \mathbf{g}_{\ell}
+  =
+  \mathbf{c}_{M,\ell} - \mathbf{c}_{F,\ell}.
+\end{equation}
+
+This vector encodes the principal geometric contrast between male and female
+anchors at layer $\ell$ \citep{bolukbasi2016man}.
+
+\subsection{Bias Measurement}
+
+For each profession $p$ and layer $\ell$ we compute two geometric estimators.
+
+\paragraph{(1) Gender Direction Projection (proj).}
+
+The scalar projection of $\mathbf{s}_{\ell}(p)$ onto the gender direction:
+
+\begin{equation}
+  \mathrm{ProjBias}_{\ell}(p)
+  =
+  \frac{
+    \mathbf{s}_{\ell}(p) \cdot \mathbf{g}_{\ell}
+  }{
+    \|\mathbf{g}_{\ell}\|
+  }.
+  \label{eq:proj}
+\end{equation}
+
+Positive values indicate alignment toward the male centroid; negative values
+indicate alignment toward the female centroid. The scalar projection preserves
+vector magnitude and is sensitive to the strength of the gender association
+\citep{bolukbasi2016man}.
+
+\paragraph{(2) Centroid Cosine Difference (cosdiff).}
+
+As a complementary magnitude-normalised estimator:
+
+\begin{equation}
+  \mathrm{CosBias}_{\ell}(p)
+  =
+  \cos\!\bigl(\mathbf{s}_{\ell}(p),\, \mathbf{c}_{M,\ell}\bigr)
+  -
+  \cos\!\bigl(\mathbf{s}_{\ell}(p),\, \mathbf{c}_{F,\ell}\bigr),
+  \label{eq:cosdiff}
+\end{equation}
+
+where cosine similarity is defined as \citep{manning2008introduction}:
+
+\begin{equation}
+  \cos(\mathbf{a},\mathbf{b})
+  =
+  \frac{\mathbf{a} \cdot \mathbf{b}}
+       {\|\mathbf{a}\|\,\|\mathbf{b}\|}.
+  \label{eq:cosine}
+\end{equation}
+
+This estimator directly compares relative angular proximity to male and female
+centroids and is invariant to vector scale.
+
+\subsection{Estimator Agreement (RQ3)}
+
+To assess measurement robustness, we compute Spearman rank correlation
+between the two estimators across profession terms at each layer
+\citep{spearman1904}:
+
+\begin{equation}
+  \rho_{\ell}
+  =
+  \mathrm{Spearman}\!\left(
+    \bigl\{\mathrm{ProjBias}_{\ell}(p)\bigr\}_{p},\,
+    \bigl\{\mathrm{CosBias}_{\ell}(p)\bigr\}_{p}
+  \right).
+  \label{eq:spearman}
+\end{equation}
+
+Spearman rank correlation measures the degree to which both estimators
+rank professions in the same order, regardless of scale differences
+\citep{spearman1904}. A value of $\rho_{\ell} = 1$ indicates perfect ordinal
+agreement; $\rho_{\ell} = 0$ indicates no agreement.
+
+\subsection{Layer-Wise Aggregation}
+
+For visualisation we compute the mean projection score across retained
+profession terms at each layer $\ell$, yielding a layer-wise bias trajectory:
+
+\begin{equation}
+  \overline{\mathrm{Proj}}_{\ell}
+  =
+  \frac{1}{|P|}
+  \sum_{p \in P}
+  \mathrm{ProjBias}_{\ell}(p),
+\end{equation}
+
+where $P$ is the set of retained professions. This trajectory summarises how
+the overall geometric gender signal evolves across model depth.
+
+% =======================================================
+\section{Results}
+% =======================================================
+
+\subsection{Case Study: \textit{ሓኪም} (Doctor) in Tigrigna}
+\label{sec:case-hakim}
+
+\paragraph{Setup.}
+We examine the Tigrigna word for \textit{doctor}, \textit{ሓኪም}, as a
+representative case for the low-resource setting under XLM-RoBERTa-base.
+The corpus contains 499 sentences in which \textit{ሓኪም} appears, drawn
+from template-based generation covering both male and female co-occurrence
+contexts (\textit{ሰበይቲ ሓኪም እያ} / \textit{ሓወይ ሓኪም እዩ}).
+Gender geometry is constructed from 11 male and 10 female anchor words,
+each supported by 12 corpus sentences, yielding a stable gender direction
+across all 13 layers of XLM-RoBERTa-base \citep{conneau2020unsupervised}.
+
+\paragraph{Layer-wise bias.}
+Table~\ref{tab:hakim-layers} reports the layer-wise projection
+(Eq.~\ref{eq:proj}) and cosine-difference (Eq.~\ref{eq:cosdiff})
+estimators for \textit{ሓኪም}. The mean projection across all layers is
+$+0.626$, placing \textit{ሓኪም} in the male-leaning half of the 30-profession
+distribution. The signal peaks at layer~9 ($\mathrm{proj} = +2.259$),
+consistent with the finding that mid-to-upper layers encode the richest
+semantic associations \citep{tenney-etal-2019-bert}. Layers~2--4 yield
+near-neutral projections, suggesting that the male association strengthens
+as representations propagate through the feed-forward sub-layers.
+
+\begin{table}[H]
+\centering
+\caption{Layer-wise bias scores for \textit{ሓኪም} (XLM-RoBERTa-base, Tigrigna).
+         $\mathrm{proj}_\ell$: Eq.~\ref{eq:proj};
+         $\Delta\cos_\ell$: Eq.~\ref{eq:cosdiff}.}
+\label{tab:hakim-layers}
+\small
+\begin{tabular}{rrrrl}
+\toprule
+\textbf{Layer} & \textbf{proj} & \textbf{$\Delta$cos} & \textbf{Direction} \\
+\midrule
+ 0 & $+0.374$ & $+0.014$ & male-leaning \\
+ 1 & $+0.250$ & $+0.013$ & male-leaning \\
+ 2 & $-0.082$ & $+0.007$ & female-leaning \\
+ 3 & $-0.017$ & $+0.006$ & neutral \\
+ 4 & $-0.011$ & $+0.003$ & neutral \\
+ 5 & $+0.614$ & $+0.001$ & male-leaning \\
+ 6 & $+1.296$ & $+0.002$ & male-leaning \\
+ 7 & $+1.577$ & $+0.001$ & male-leaning \\
+ 8 & $+1.195$ & $-0.002$ & male-leaning \\
+ 9 & $+2.259$ & $-0.005$ & male-leaning \\
+10 & $+0.096$ & $-0.004$ & male-leaning \\
+11 & $+0.672$ & $-0.002$ & male-leaning \\
+12 & $-0.083$ & $-0.000$ & female-leaning \\
+\midrule
+\textbf{Mean} & $\mathbf{+0.626}$ & & \textbf{male-leaning} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Representation uniqueness.}
+To assess whether the bias signal reflects genuine contextual gender inference
+or a near-static property of the token, we compute pairwise cosine similarity
+across all 499 contextual vectors of \textit{ሓኪም} at each layer
+(Table~\ref{tab:hakim-uniqueness}). At the final layer (layer~12) all
+$\binom{499}{2} = 124{,}251$ pairs exceed the $0.99$ threshold, indicating
+complete representational collapse. This is consistent with the observation
+that low-resource language tokens tend to produce near-static representations
+when context cannot be leveraged \citep{bommasani2020reductions}.
+
+\begin{table}[H]
+\centering
+\caption{Representation uniqueness for \textit{ሓኪም} across selected layers
+         ($n = 499$ sentences, $124{,}251$ unique pairs per layer).}
+\label{tab:hakim-uniqueness}
+\small
+\begin{tabular}{rrrrrr}
+\toprule
+\textbf{Layer} & \textbf{mean cos} & \textbf{std} & \textbf{min} & \textbf{max} & \textbf{n\_dups ($>$0.99)} \\
+\midrule
+ 0 & 0.983 & 0.016 & 0.951 & 1.000 &  60{,}786 \\
+ 1 & 0.936 & 0.038 & 0.790 & 1.000 &   4{,}145 \\
+ 6 & 0.951 & 0.019 & 0.882 & 1.000 &   3{,}247 \\
+ 9 & 0.974 & 0.011 & 0.930 & 1.000 &   6{,}363 \\
+12 & 0.997 & 0.001 & 0.993 & 1.000 & 124{,}251 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation.}
+The detected male-leaning bias for \textit{ሓኪም} is real but must be
+interpreted as an \emph{intrinsic token-level association} encoded during
+pretraining, not as evidence of context-sensitive gender reasoning. Because
+XLM-RoBERTa cannot leverage cross-sentence variation for Tigrigna, the bias
+measurement functions analogously to a static embedding probe
+\citep{caliskan2017semantics}---but one derived from a multilingual contextual
+model rather than a frequency-based co-occurrence matrix.
+
+% ----------------------------------------------------------
+\subsection{Data Coverage After Context Filtering}
+\label{sec:coverage}
+
+Table~\ref{tab:coverage} reports vocabulary and corpus coverage after
+applying the minimum context requirement.
+
+\begin{table}[H]
+\centering
+\caption{Coverage after context filtering for Tigrigna (primary case study).
+         Spanish and Arabic results follow the same protocol.}
+\label{tab:coverage}
+\small
+\begin{tabular}{lccccc}
+\toprule
+Language & Corpus size & Professions retained & Male anchors & Female anchors & Contexts per profession \\
+\midrule
+Arabic   & {[..]}   & {[..]}  & {[..]} & {[..]}  & {[..]}  \\
+Spanish  & {[..]}   & {[..]}  & {[..]} & {[..]}  & {[..]}  \\
+Tigrigna & $\approx$14{,}850 & 30 / 30 & 11 & 10 & 50 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For Tigrigna under XLM-RoBERTa-base all 30 profession terms have 498--499
+corpus hits each (per representation-uniqueness analysis). Under XLM-V-base,
+two terms---\textit{ጠበቓ} (lawyer) and \textit{ነዳቓይ} (mechanic)---yielded
+zero corpus hits due to tokenisation mismatches introduced by the 1M
+SentencePiece vocabulary (see Section~\ref{sec:xlmv}), leaving 28 terms
+for that model. All other models retained the full 30 terms.
+
+% ----------------------------------------------------------
+\subsection{Five-Model Comparison on Tigrigna}
+\label{sec:fivemodel}
+
+Table~\ref{tab:model-comparison} summarises the bias profile of each
+architecture on Tigrigna, constituting the main quantitative result.
+
+\begin{table}[H]
+\centering
+\caption{Five-model gender bias comparison on Tigrigna (ti). Peak layer is
+         the layer with the highest mean projection score (Eq.~\ref{eq:proj}).
+         M:F:N = professions majority male-leaning : female-leaning : neutral
+         across layers. Min~$\rho$ = minimum Spearman correlation
+         (Eq.~\ref{eq:spearman}) across all layers for that model.}
+\label{tab:model-comparison}
+\small
+\begin{tabular}{lccccccc}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Vocab} & \textbf{Peak} & \textbf{Peak proj} & \textbf{M:F:N} & \textbf{Min $\rho$} \\
+\midrule
+mBERT              & 13 & WP $\approx$120K   & ---  & $-3.61^{*}$  & n/a    & $\dagger$1.000 \\
+XLM-R-base         & 13 & SP 250K            &   9  & $+2.99$      & 26:3:1 & 0.992 \\
+XLM-R-large        & 25 & SP 250K            &  23  & $+3.46$      & 25:3:2 & 0.992 \\
+XLM-V-base         & 13 & SP 1M              &  11  & $+2.63$      & $25{:}2{:}1^{\ddagger}$ & $0.970^{\S}$ \\
+mDeBERTa-v3-base   & 13 & SP $\approx$128K   &  11  & $-1.84^{\P}$ & 2:28:0 & 0.974 \\
+\bottomrule
+\multicolumn{7}{p{0.95\linewidth}}{%
+$^{*}$~mBERT maps all Tigrigna single-word tokens to \texttt{[UNK]};
+  reported value is the degenerate single-word cluster mean at layer~0.
+  Multi-word professions form a second cluster: $-0.677$ at layer~0.
+  No profession-level differentiation is present.\\
+$^{\dagger}$~Spearman $\rho \approx 1.000$ at all layers is a tied-rank
+  artifact: all professions share identical values at each layer, making
+  ranks trivially tied; the result is not meaningful metric agreement.\\
+$^{\ddagger}$~28/30 professions; \textit{ጠበቓ} and \textit{ነዳቓይ} excluded
+  (0 corpus hits under the 1M vocabulary).\\
+$^{\S}$~Layer~12 anomaly: $\rho = 0.720$; all other layers $\rho \geq 0.970$.\\
+$^{\P}$~Negative peak indicates female-leaning direction; mDeBERTa produces a
+  complete directional reversal relative to the XLM-R family.
+} \\
+\end{tabular}
+\end{table}
+
+% ----------------------------------------------------------
+\subsection{Layer-Wise Bias Trajectories}
+\label{sec:trajectories}
+
+Figure~\ref{fig:projection-grid} displays the layer-wise mean projection
+trajectory for all five models. The panels reveal qualitatively distinct
+profiles that correspond to architectural and vocabulary differences.
+
+\begin{figure}[H]
+\centering
+
+\begin{subfigure}[b]{0.45\linewidth}
+  \includegraphics[width=\linewidth]{../output/ti/bert-base-multilingual-cased/figs/ti_mbert_projection_curve.png}
+  \caption{mBERT --- WordPiece [UNK] degeneration; two clusters visible.}
+  \label{fig:proj-mbert}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\linewidth}
+  \includegraphics[width=\linewidth]{../output/ti/xlm-roberta-base/figs/ti_xlmr_base_projection_curve.png}
+  \caption{XLM-RoBERTa-base --- single peak at layer~9 ($+2.99$).}
+  \label{fig:proj-xlmrbase}
+\end{subfigure}
+
+\vspace{1em}
+
+\begin{subfigure}[b]{0.45\linewidth}
+  \includegraphics[width=\linewidth]{../output/ti/xlm-roberta-large/figs/ti_xlmr_large_projection_curve.png}
+  \caption{XLM-RoBERTa-large --- double peak: layers~13 ($+2.99$) and~23 ($+3.46$).}
+  \label{fig:proj-xlmrlarge}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\linewidth}
+  \includegraphics[width=\linewidth]{../output/ti/facebook_xlm-v-base/figs/ti_xlmv_base_projection_curve.png}
+  \caption{XLM-V-base --- peak at layer~11 ($+2.63$); collapse to $-3.27$ at layer~12.}
+  \label{fig:proj-xlmv}
+\end{subfigure}
+
+\vspace{1em}
+
+\begin{subfigure}[b]{0.45\linewidth}
+  \includegraphics[width=\linewidth]{../output/ti/microsoft_mdeberta-v3-base/figs/ti_mdeberta_projection_curve.png}
+  \caption{mDeBERTa-v3-base --- all layers negative from layer~1; female-leaning reversal; collapse to $-7.24$ at layer~12.}
+  \label{fig:proj-mdeberta}
+\end{subfigure}
+\hfill
+\begin{subfigure}[b]{0.45\linewidth}
+  \centering
+  \vspace{2em}
+  \small
+  \textbf{Key observations across panels:}\\[0.5em]
+  \begin{tabular}{lp{0.7\linewidth}}
+    \textbullet & XLM-R family (b, c, d) builds bias monotonically in mid-layers \\[0.3em]
+    \textbullet & Scale amplifies: large $>$ base at peak \\[0.3em]
+    \textbullet & mDeBERTa (e) is uniquely female-leaning \\[0.3em]
+    \textbullet & Final layer (layer 12/24) collapses in all models \\[0.3em]
+    \textbullet & mBERT (a) shows no profession differentiation \\
+  \end{tabular}
+  \caption{Observations.}
+  \label{fig:proj-notes}
+\end{subfigure}
+
+\caption{Layer-wise mean projection bias ($\overline{\mathrm{Proj}}_\ell$) for all five
+         models on Tigrigna. Positive values indicate male-leaning direction;
+         negative values indicate female-leaning direction. Layers are indexed
+         from the embedding layer (0) through the final transformer block.}
+\label{fig:projection-grid}
+\end{figure}
+
+\FloatBarrier
+
+\paragraph{Shared patterns.}
+Four findings are consistent across the XLM-R family (XLM-R-base, XLM-R-large,
+XLM-V-base):
+\begin{enumerate}[noitemsep,leftmargin=*]
+  \item Bias is near-zero at layer~0 and builds progressively across depth.
+  \item It peaks at a middle-to-upper layer (9--11 for base-size models,
+        13 and 23 for XLM-R-large).
+  \item It collapses at the final layer (layer~12 for base models,
+        layer~24 for the large model) toward near-zero or negative values.
+  \item Increasing model scale (XLM-R-base vs.\ XLM-R-large) amplifies
+        the peak magnitude ($+2.99 \to +3.46$) without changing direction.
+\end{enumerate}
+
+\paragraph{mBERT degeneration.}
+mBERT's WordPiece vocabulary does not include Tigrigna characters; all tokens
+are mapped to \texttt{[UNK]}. This produces two degenerate clusters at each
+layer: 26 single-word professions share one identical value per layer (e.g.,
+$-3.614$ at layer~0), and the 4 multi-word professions (which tokenise to
+multiple \texttt{[UNK]} tokens with different position encodings) share a
+distinct but also uniform value ($-0.677$ at layer~0). No profession-level
+differentiation exists, confirming that mBERT constitutes a \emph{negative
+control} rather than a meaningful bias measurement.
+
+% ----------------------------------------------------------
+\subsection{Most Biased Professions at Peak Layer}
+\label{sec:professions}
+
+Table~\ref{tab:top5-xlmrlarge} lists the five most male-biased Tigrigna
+professions at the peak layer of XLM-RoBERTa-large (layer~23), alongside
+professions with persistent female-leaning associations.
+
+\begin{table}[H]
+\centering
+\caption{Most gender-biased professions at peak layer~23,
+         XLM-RoBERTa-large, Tigrigna. Bias is ProjBias (Eq.~\ref{eq:proj}).}
+\label{tab:top5-xlmrlarge}
+\small
+\begin{tabular}{llr}
+\toprule
+\textbf{Profession (Tigrigna)} & \textbf{English gloss} & \textbf{ProjBias$_{23}$} \\
+\midrule
+ዳኛ                    & judge           & $+7.13$ \\
+መምህር                 & teacher         & $+6.89$ \\
+ፖሊስ                  & police officer  & $+6.11$ \\
+ኮኮ                   & cook/chef       & $+6.03$ \\
+ሰራሕተኛ ጽሬት           & cleaning worker & $+3.93$ \\
+\midrule
+\multicolumn{3}{l}{\textit{Female-leaning across most layers:}} \\
+ጠበቓ                  & lawyer          & (neg.\ across layers 5--19) \\
+ሳይንቲስት               & scientist       & (neg.\ at early layers) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Notably, \textit{ሰራሕተኛ ጽሬት} (cleaning worker) is strongly male-leaning
+under XLM-R-large despite the occupation being stereotypically female in many
+societies---illustrating that geometric associations may reflect pretraining
+co-occurrence patterns rather than social stereotypes directly.
+
+% ----------------------------------------------------------
+\subsection{Estimator Agreement (RQ3)}
+\label{sec:agreement}
+
+Table~\ref{tab:spearman} reports Spearman rank correlation (Eq.~\ref{eq:spearman})
+between the projection and cosine-difference estimators across all layers for
+each model.
+
+\begin{table}[H]
+\centering
+\caption{Layer-wise Spearman $\rho$ between \texttt{proj} and \texttt{cosdiff}
+         estimators on Tigrigna. Minimum across all layers is reported as
+         the conservative bound on agreement.}
+\label{tab:spearman}
+\small
+\begin{tabular}{lccl}
+\toprule
+\textbf{Model} & \textbf{Min $\rho$} & \textbf{Max $\rho$} & \textbf{Notes} \\
+\midrule
+mBERT            & ---   & ---   & degenerate (tied ranks, see Table~\ref{tab:model-comparison}) \\
+XLM-R-base       & 0.992 & 1.000 & perfect at layers 11--12 \\
+XLM-R-large      & 0.993 & 1.000 & perfect at layers 5 and 24 \\
+XLM-V-base       & $0.720^{*}$ & 0.999 & layer 12 anomaly; $\rho \geq 0.970$ for layers 0--11 \\
+mDeBERTa-v3-base & 0.974 & 0.999 & lowest at layer 9 \\
+\bottomrule
+\multicolumn{4}{p{0.85\linewidth}}{%
+$^{*}$~Layer~12 of XLM-V-base shows a representational collapse that
+       disrupts both estimators simultaneously, yielding the one anomalous
+       low-correlation point. Excluding layer~12, the minimum is 0.970.}\\
+\end{tabular}
+\end{table}
+
+For all non-degenerate models, Spearman $\rho \geq 0.970$ at every valid layer
+(addressing RQ3). The two estimators---one magnitude-sensitive
+(Eq.~\ref{eq:proj}), one angle-only (Eq.~\ref{eq:cosdiff})---agree on the
+ordinal ranking of professions despite their different geometric properties.
+This confirms that the observed bias patterns are not artifacts of estimator
+choice.
+
+% ----------------------------------------------------------
+\subsection{Architectural Reversal: mDeBERTa and Disentangled Attention}
+\label{sec:reversal}
+
+The most striking result is a complete inversion of bias direction under
+mDeBERTa-v3-base. Whereas the XLM-R family produces 25--26 male-leaning
+professions per model, mDeBERTa produces only 2 male-leaning professions
+and 28 female-leaning ones (addressing RQ4).
+
+Table~\ref{tab:mdeberta-exceptions} shows the only two professions that
+remain male-leaning under mDeBERTa, averaged across all layers.
+
+\begin{table}[H]
+\centering
+\caption{Only male-leaning professions under mDeBERTa-v3-base (Tigrigna),
+         averaged across all 13 layers. All 28 remaining professions are
+         female-leaning.}
+\label{tab:mdeberta-exceptions}
+\small
+\begin{tabular}{llr}
+\toprule
+\textbf{Profession (Tigrigna)} & \textbf{English gloss} & \textbf{Mean ProjBias} \\
+\midrule
+ፕሮፌሰር & professor & $+0.27$ \\
+ሓረስታይ & farmer    & $+0.13$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The layer-12 collapse is especially pronounced for mDeBERTa: individual
+professions reach values as extreme as $-17.02$ (\textit{ነዳቓይ}) and
+$-16.58$ (\textit{ተክኒሻን}), far exceeding the XLM-R-large layer-12 collapse
+(which approaches zero, near $-0.51$ mean). This suggests that the final
+hidden state in mDeBERTa undergoes a qualitatively different representational
+transition than in the XLM-R family.
+
+We attribute the directional reversal to Disentangled Attention
+\citep{he2021deberta}, which encodes content and position information in
+separate attention matrices. When content-based and position-based
+representations are disentangled, the gender direction $\mathbf{g}_\ell$
+(constructed from anchor centroids, Eq.~3) may align orthogonally or even
+inversely with profession subspace geometry relative to standard multi-head
+attention. The result is that profession vectors cluster on the female side
+of the gender axis---not because mDeBERTa associates professions with
+femininity in any direct cultural sense, but because its internal geometry
+is organised differently.
+
+% ----------------------------------------------------------
+\subsection{Vocabulary Size and Corpus Alignment: XLM-V}
+\label{sec:xlmv}
+
+XLM-V-base was designed to overcome the vocabulary bottleneck in XLM-R by
+expanding the SentencePiece vocabulary from 250K to 1M tokens
+\citep{liang2023xlmv}. For most low-resource languages this improves
+tokenisation fidelity. However, for Tigrigna we observe a paradoxical
+misalignment: two profession terms---\textit{ጠበቓ} (lawyer) and
+\textit{ነዳቓይ} (mechanic)---are tokenised differently by the 1M vocabulary
+than by the 250K vocabulary, producing subword sequences absent from the
+evaluation corpus. Both terms receive 0 corpus hits under XLM-V, and are
+excluded from the bias calculation.
+
+This illustrates that larger vocabulary coverage does not guarantee
+better corpus alignment: if the corpus was generated or tokenised with a
+different vocabulary, enlarging the model vocabulary introduces new
+mismatches. The XLM-V results (28 professions, peak $+2.63$) are otherwise
+consistent with the XLM-R family, confirming that when tokenisation succeeds,
+bias patterns are robust to vocabulary size.
+
+% =======================================================
+\section{Discussion}
+% =======================================================
+
+\subsection{Cross-Lingual Patterns}
+
+The Tigrigna results demonstrate that multilingual transformers encode
+gender associations even for languages absent from their dedicated
+pretraining data. This is consistent with \citet{lauscher2020zero}, who
+show that properties from high-resource languages transfer implicitly to
+low-resource ones via shared subword representations. Because Tigrigna
+tokens are processed via SentencePiece subword pieces that partially overlap
+with other Semitic or phonologically similar languages, the models inherit
+geometric associations from those languages' training signal.
+
+However, the nature of this transferred bias is not transparent. The
+associations detected for Tigrigna professions cannot be verified against
+ground-truth human judgments of Tigrigna gender norms, and may reflect
+the gender coding of phonologically similar tokens in higher-resource
+languages. This highlights a critical limitation of cross-lingual
+geometric bias analysis: the source of the detected signal is opaque.
+
+\subsection{Layer-Wise Interpretation}
+
+The consistent pattern across the XLM-R family---near-zero at layer~0,
+building through mid-layers, peaking at layer~9--11 (base) or layer~23
+(large), then collapsing---aligns with the established view that lower
+layers encode syntactic and morphological features while upper layers
+encode semantic relationships \citep{tenney-etal-2019-bert,rogers2020primer}.
+Gender associations, as social-semantic properties, are expected to peak
+in the layers where semantic organisation is most pronounced.
+
+The final-layer collapse is notable: bias scores for most professions
+approach zero or reverse sign at layer~12 (base) or layer~24 (large).
+This suggests that the model's final-layer representations are pulled
+toward a language-model prediction objective that partially averages out
+profession-specific gender associations. Practitioners using final-layer
+embeddings for downstream tasks may therefore underestimate the degree
+of bias present in intermediate representations.
+
+\subsection{Architecture Determines Bias Direction (RQ4)}
+
+The mDeBERTa reversal is the paper's most important finding. mBERT,
+XLM-R-base, XLM-R-large, and XLM-V-base all encode male-leaning bias
+for the same Tigrigna professions trained on broadly comparable multilingual
+corpora. mDeBERTa-v3-base, trained on similar multilingual data, produces
+female-leaning associations for 28 of the same 30 professions.
+
+The only systematic difference between mDeBERTa and the XLM-R family is
+the attention mechanism: Disentangled Attention versus standard multi-head
+attention. This is strong evidence that \emph{architectural choice
+determines bias direction} in the low-resource cross-lingual setting,
+overriding the signal from pretraining data. This has practical implications:
+bias mitigation strategies that focus on pretraining data curation may be
+insufficient if the attention mechanism itself reshapes geometric associations.
+
+\subsection{Metric Robustness}
+
+The agreement between the projection estimator (Eq.~\ref{eq:proj}) and the
+cosine-difference estimator (Eq.~\ref{eq:cosdiff}) at $\rho \geq 0.970$
+across all valid models is a methodological positive. The two estimators
+capture different geometric properties---one is magnitude-sensitive, the
+other is angle-only---yet they rank professions in nearly identical order
+at every layer. This confirms that the bias ranking is a robust geometric
+feature of the model's representation space, not an artifact of the
+particular estimator chosen.
+
+The one exception is XLM-V layer~12, where $\rho = 0.720$. Inspection
+of the data shows that the representation collapse at this layer
+simultaneously disrupts both estimators in different ways, breaking their
+rank agreement. This is consistent with a catastrophic representational
+transition at the final layer, not with genuine metric disagreement.
+
+\subsection{Limitations}
+
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item \textbf{Corpus construction}: The Tigrigna corpus is template-based,
+        controlling for surface-level context but limiting ecological validity.
+        Bias measurements may differ on naturally occurring text.
+  \item \textbf{Tokenisation and morphology}: Tigrigna is morphologically rich;
+        profession terms may be systematically fragmented across models,
+        affecting the subword mean-pooling step.
+  \item \textbf{Anchor coverage}: The 21-word anchor set (11 male, 10 female)
+        is necessarily limited. Different anchor choices may shift the
+        gender direction and alter profession rankings.
+  \item \textbf{Near-static representations}: As shown in
+        Section~\ref{sec:case-hakim}, Tigrigna tokens produce highly similar
+        representations across contexts. The bias signal reflects intrinsic
+        token geometry rather than contextually modulated gender inference.
+  \item \textbf{No human validation}: We have no ground-truth Tigrigna
+        speaker judgments about profession gender associations to validate
+        against, limiting the cultural interpretation of findings.
+  \item \textbf{Causal opacity}: We cannot directly observe the mechanism by
+        which Disentangled Attention reverses bias direction; the attribution
+        to attention architecture is inferential.
+\end{itemize}
+
+% =======================================================
+\section{Conclusion}
+% =======================================================
+
+This study presents the first systematic layer-wise gender bias analysis
+of five multilingual transformer architectures applied to Tigrigna, a
+low-resource Ge'ez-script language. Using a unified geometric protocol
+grounded in contextual-to-static reductions \citep{bommasani2020reductions}
+and projection-based bias estimation \citep{bolukbasi2016man}, we draw four
+conclusions.
+
+First, four of five models encode measurable male-leaning gender associations
+for Tigrigna professions despite the language's absence from dedicated
+pretraining data, confirming cross-lingual transfer of social associations
+(RQ1). Second, bias accumulates progressively across transformer depth,
+peaking at mid-to-late layers and collapsing at the final layer---a pattern
+consistent with the semantic organisation of transformer representations
+(RQ2). Third, two independent geometric estimators agree at Spearman
+$\rho \geq 0.970$ across all valid models, confirming methodological
+robustness (RQ3). Fourth, and most importantly, mDeBERTa-v3-base's
+Disentangled Attention mechanism completely inverts the bias direction
+relative to the XLM-R family, producing female-leaning associations for
+28 of 30 professions---strong evidence that architectural choice can
+override data-driven gender associations (RQ4).
+
+These findings have concrete implications for multilingual NLP practitioners:
+(1) geometric bias analysis requires SentencePiece vocabulary coverage as a
+prerequisite for low-resource languages---WordPiece models like mBERT are
+degenerate negative controls; (2) bias audit results depend critically on
+which model layer is inspected; (3) bias mitigation strategies focusing
+solely on pretraining data may be insufficient if the attention mechanism
+independently reshapes bias geometry.
+
+\section{Future Work}
+
+\begin{itemize}[noitemsep,leftmargin=*]
+  \item Extend the analysis to Arabic and Spanish layer-wise trajectories
+        under all five models for a complete cross-lingual comparison.
+  \item Collect small-scale human judgments from Tigrigna speakers to
+        validate profession-gender associations against cultural norms.
+  \item Probe the Disentangled Attention mechanism mechanistically
+        (attention-head attribution, representation similarity analysis)
+        to understand why it reverses bias direction.
+  \item Test whether post-hoc debiasing methods \citep{bolukbasi2016man}
+        applied at the intermediate peak layer reduce downstream bias in
+        classification tasks.
+  \item Evaluate additional low-resource languages with Ge'ez and other
+        non-Latin scripts to assess the generalisability of the findings.
+\end{itemize}
+
+% =======================================================
+\clearpage
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+% =======================================================
+\appendix
+\section{Profession Inventory}
+
+\subsection{Full Tigrigna Profession List (30 Terms)}
+
+\begin{itemize}[noitemsep, leftmargin=*, columns=2]
+  \item ሓኪም (doctor)
+  \item ነርስ (nurse)
+  \item መምህር (teacher)
+  \item ፕሮፌሰር (professor)
+  \item መሃንዲስ (engineer)
+  \item ሳይንቲስት (scientist)
+  \item ጠበቓ (lawyer)
+  \item ዳኛ (judge)
+  \item ሓላፊ (manager)
+  \item ዳይረክተር (director)
+  \item ወተሃደር (soldier)
+  \item ፖሊስ (police officer)
+  \item ሓረስታይ (farmer)
+  \item ነጋዳይ (merchant)
+  \item መካኒክ (mechanic)
+  \item ኤለክትሪሻን (electrician)
+  \item ፈለኛሞ (pilot)
+  \item ነዳቓይ (miner/driller)
+  \item ኣርኪቴክት (architect)
+  \item ኣካውንታንት (accountant)
+  \item ባንከር (banker)
+  \item ስነ ጥበባዊ (artist)
+  \item ሙዚቀኛ (musician)
+  \item ተዋሳኢ (actor)
+  \item ስራሕ ፈጣሪ (entrepreneur)
+  \item ኮኮ (cook/chef)
+  \item ሰራሕተኛ ጽሬት (cleaning worker)
+  \item ሓላዊ ጸጥታ (security guard)
+  \item ተክኒሻን (technician)
+  \item ፕሮግራመር (programmer)
+\end{itemize}
+
+\subsection{Sample Gender Anchors (Tigrigna)}
+
+\textbf{Male anchors (11):} pronouns, kinship terms, and generic masculine
+markers in Tigrigna (e.g., \textit{ንሱ} `he', \textit{ሓወይ} `my brother',
+\textit{ኣቦ} `father', \textit{ወዲ} `son/boy').
+
+\textbf{Female anchors (10):} corresponding feminine forms
+(e.g., \textit{ንሳ} `she', \textit{ሓፍተይ} `my sister',
+\textit{ኣደ} `mother', \textit{ጓል} `daughter/girl').
+
+\end{document}
