@@ -1,0 +1,91 @@
+% ============================================================
+%  main.tex — compile with XeLaTeX (required for Ethiopic/Tigrigna Unicode)
+%
+%  xelatex main.tex
+% ============================================================
+\documentclass[11pt,a4paper]{article}
+
+% ── Unicode & font support (XeLaTeX required for Ethiopic script) ─────────────
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+
+% Ethiopic font — uses system Noto Sans Ethiopic if available,
+% falls back gracefully to any font covering Unicode Ethiopic block.
+\newfontfamily\ethiopicfont[Script=Ethiopic]{Noto Sans Ethiopic}
+% If Noto Sans Ethiopic is not installed, try: Abyssinica SIL  or  Ethiopia Jiret
+
+% ── Mathematics ───────────────────────────────────────────────────────────────
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+% ── Tables ────────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+
+% ── Figures ───────────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\graphicspath{{../}}   % figures referenced relative to project root
+
+% ── Layout ────────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{setspace}
+\onehalfspacing
+
+% ── Hyperlinks ────────────────────────────────────────────────────────────────
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+% ── Bibliography ──────────────────────────────────────────────────────────────
+\usepackage[round]{natbib}
+
+% ── Tigrigna text helper ──────────────────────────────────────────────────────
+% Wrap any Tigrigna word with \ti{...} for correct font selection.
+% In the sections.tex file all Tigrigna tokens appear directly in Unicode;
+% XeLaTeX handles them automatically if the system font covers the Ethiopic block.
+\newcommand{\ti}[1]{{\ethiopicfont #1}}
+
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\title{\textbf{Layer-wise Gender Bias in XLM-RoBERTa:\\
+       Evidence from Tigrigna, a Low-Resource Language}}
+
+\author{
+  [Author Names]\\
+  [Institution]\\
+  \texttt{[email]}
+}
+
+\date{}
+\maketitle
+
+\begin{abstract}
+We investigate gender bias in XLM-RoBERTa-base as reflected in the
+contextual representations of Tigrigna profession words, probing all 13
+transformer layers using two independent bias estimators.  We find that
+the model produces near-static representations for all 30 Tigrigna
+professions tested (mean pairwise cosine similarity $> 0.91$), a
+consequence of the language's low representation in pretraining data.
+Despite this, substantial and consistent male bias is present in the
+mid-to-deep transformer layers, peaking at layer~9.
+Comparing static embedding bias with contextual bias reveals two
+qualitatively distinct mechanisms: embedding-level bias (present before
+any attention is applied) and attention-level bias (imposed by the
+transformer layers on otherwise neutral tokens).  Both ProjBias and
+CosDiff estimators agree near-perfectly across all layers
+(Spearman $\rho \geq 0.992$, $p < 10^{-26}$).
+\end{abstract}
+
+% ── Content ───────────────────────────────────────────────────────────────────
+\input{sections}
+
+% ── References ────────────────────────────────────────────────────────────────
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
