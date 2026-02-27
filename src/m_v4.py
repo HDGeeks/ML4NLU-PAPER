@@ -82,9 +82,16 @@ def classify_sentence(sentence: str) -> str:
 
 # ── Language & model ──────────────────────────────────────────────────────────
 LANGUAGE   = "ti"                          # "en" | "es" | "ar" | "ti"
-#MODEL_NAME = "bert-base-multilingual-cased"
-MODEL_NAME = "xlm-roberta-large"
-#MODEL_NAME = "xlm-roberta-base"          # ← switch model here
+
+# MODEL_NAMES can be a single string OR a list — all will be run in sequence.
+MODEL_NAMES = [
+    "xlm-roberta-base",
+    "xlm-roberta-large",
+    "facebook/xlm-v-base",
+    "microsoft/mdeberta-v3-base",
+]
+# Uncomment to run a single model only:
+# MODEL_NAMES = "xlm-roberta-base"
 
 # ── Run mode ───────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace — use to understand the pipeline
@@ -779,18 +786,21 @@ def run_bulk(lang, tokenizer, model, corpus,
 #  Entry point
 # ══════════════════════════════════════════════════════════════════════════════
 
-def main():
-    from data_loader import load_corpus, load_anchors, load_professions
-    corpus                   = load_corpus(LANGUAGE)
-    male_words, female_words = load_anchors(LANGUAGE)
-    job_titles               = load_professions(LANGUAGE)
-
+def run_one_model(model_name, corpus, male_words, female_words, job_titles):
+    """Load a single model and run the pipeline (debug or bulk)."""
+    print(f"\n{'═'*60}")
+    print(f"  MODEL: {model_name}")
+    print(f"{'═'*60}")
     print("Loading model…")
     # use_fast=False required for mDeBERTa-v3 (SentencePiece needs protobuf)
-    use_fast = "deberta" not in MODEL_NAME.lower()
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True, use_fast=use_fast)
-    model     = AutoModel.from_pretrained(MODEL_NAME,     local_files_only=True)
+    use_fast = "deberta" not in model_name.lower()
+    tokenizer = AutoTokenizer.from_pretrained(model_name, local_files_only=True, use_fast=use_fast)
+    model     = AutoModel.from_pretrained(model_name,     local_files_only=True)
     model.eval()
+
+    # Patch the global MODEL_NAME so all downstream functions use the right name
+    global MODEL_NAME
+    MODEL_NAME = model_name
 
     if MODE == "debug":
         run_debug(LANGUAGE, DEBUG_WORD, tokenizer, model, corpus,
@@ -800,6 +810,27 @@ def main():
                  male_words, female_words, job_titles)
     else:
         raise ValueError(f"Unknown MODE '{MODE}' — set to 'debug' or 'bulk' in settings")
+
+    # Free memory before loading the next model
+    del model, tokenizer
+
+
+def main():
+    from data_loader import load_corpus, load_anchors, load_professions
+    corpus                   = load_corpus(LANGUAGE)
+    male_words, female_words = load_anchors(LANGUAGE)
+    job_titles               = load_professions(LANGUAGE)
+
+    # Accept single string or list
+    models = MODEL_NAMES if isinstance(MODEL_NAMES, list) else [MODEL_NAMES]
+
+    for model_name in models:
+        run_one_model(model_name, corpus, male_words, female_words, job_titles)
+
+    if len(models) > 1:
+        print(f"\n{'═'*60}")
+        print(f"  All {len(models)} models done.")
+        print(f"{'═'*60}")
 
 
 if __name__ == "__main__":
