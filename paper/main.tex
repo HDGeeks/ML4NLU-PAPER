@@ -42,7 +42,7 @@
 \begin{document}
 % ══════════════════════════════════════════════════════════════════════════════
 
-\title{\textbf{Layer-wise Gender Bias in XLM-RoBERTa:\\
+\title{\textbf{Layer-wise Gender Bias in Multilingual Transformers:\\
        Evidence from Tigrigna, a Low-Resource Language}}
 
 \author{[Author Names] \\ [Institution] \\ \texttt{[email]}}
@@ -51,20 +51,25 @@
 
 % ── Abstract ──────────────────────────────────────────────────────────────────
 \begin{abstract}
-We investigate gender bias in XLM-RoBERTa-base as reflected in the contextual
-representations of Tigrigna profession words, probing all 13 transformer layers
-using two independent bias estimators. We find that the model produces
-near-static representations for all 30 Tigrigna professions tested (mean
-pairwise cosine similarity $>0.91$), a consequence of the language's low
-representation in pretraining data. Despite this, substantial and consistent
-male bias is present in the mid-to-deep transformer layers, peaking at layer~9.
-Comparing static embedding bias with contextual bias reveals two qualitatively
-distinct mechanisms: \emph{embedding-level bias} (present before any attention
-is applied) and \emph{attention-level bias} (imposed by the transformer layers
-on otherwise neutral tokens). Both ProjBias and CosDiff estimators agree
-near-perfectly across all layers (Spearman $\rho \geq 0.992$,
-$p < 10^{-26}$), and batch-stability validation over 24 independent sentence
-samples confirms that bias estimates are fully converged and sampling-independent.
+We investigate gender bias in multilingual transformer models as reflected in
+the contextual representations of Tigrigna profession words, probing all
+transformer layers of three models — XLM-RoBERTa-base (13 layers),
+XLM-RoBERTa-large (25 layers), and mBERT (13 layers) — using two independent
+bias estimators. We find that mBERT maps all Tigrigna tokens to \texttt{[UNK]},
+producing degenerate identical representations and zero measurable bias signal —
+establishing vocabulary coverage as a prerequisite for multilingual bias
+measurement. Both XLM-RoBERTa variants produce near-static representations for
+all 30 professions tested (mean pairwise cosine similarity $>0.91$), yet exhibit
+substantial male bias in mid-to-deep layers. XLM-RoBERTa-base peaks at
+layer~9 ($+2.99$) in a single-phase accumulation pattern; XLM-RoBERTa-large
+exhibits a two-phase double-peak structure (layer~13: $+2.99$, layer~23: $+3.46$),
+with stronger embedding-level bias at layer~0 ($+1.29$ vs $+0.20$). Comparing
+static embedding bias with contextual bias reveals two qualitatively distinct
+mechanisms: \emph{embedding-level bias} and \emph{attention-level bias}.
+ProjBias and CosDiff estimators agree near-perfectly across all layers in both
+XLM-RoBERTa models (Spearman $\rho \geq 0.992$, $p < 10^{-26}$), and
+batch-stability validation confirms that bias estimates are fully converged
+and sampling-independent.
 \end{abstract}
 
 % ══════════════════════════════════════════════════════════════════════════════
@@ -112,20 +117,32 @@ corpus sentences. 11 male and 10 female anchors are used.}
 \label{tab:anchors}
 \end{table}
 
-\subsection{Model}
+\subsection{Models}
 
-All experiments use \textbf{XLM-RoBERTa-base}~\cite{conneau2020xlm}
-(\texttt{xlm-roberta-base}), a 12-layer transformer with 768-dimensional hidden
-states trained on 100 languages via masked language modelling on CommonCrawl
-data. The model is used strictly in inference mode with no fine-tuning; all
-weights are frozen. We extract hidden states from all 13 layers (the embedding
-layer~0 plus the 12 transformer blocks). All experiments run on CPU with full
-determinism; no GPU is required.
+We evaluate three multilingual transformer models, all used strictly in inference
+mode with frozen weights. All experiments run on CPU with full determinism.
 
-For any word $w$ that tokenises into $k$ subword pieces $t_1, \ldots, t_k$
-(using the SentencePiece vocabulary of XLM-RoBERTa), we obtain its
-representation at layer $l$ as the mean of the $k$ hidden-state vectors at
-the corresponding token positions:
+\paragraph{XLM-RoBERTa-base}~\cite{conneau2020xlm} (\texttt{xlm-roberta-base}).
+A 12-layer transformer with 768-dimensional hidden states, trained on 100
+languages via masked language modelling on CommonCrawl. We extract hidden states
+from all 13 layers (embedding layer~0 plus 12 transformer blocks).
+Tokenisation uses a SentencePiece vocabulary of 250{,}000 pieces with
+character-level fallback, giving broad Ethiopic script coverage.
+
+\paragraph{XLM-RoBERTa-large} (\texttt{xlm-roberta-large}).
+The large variant of the same family: 24 transformer layers, 1{,}024-dimensional
+hidden states, 16 attention heads. Shares the identical SentencePiece vocabulary
+and tokenisation scheme as the base model, so Tigrigna subword decomposition
+is unchanged. We extract hidden states from all 25 layers.
+
+\paragraph{mBERT} (\texttt{bert-base-multilingual-cased}).
+A 12-layer, 768-dimensional BERT model trained on 104 languages using WordPiece
+tokenisation with a ~120{,}000 token vocabulary. Included as a baseline to test
+whether any multilingual model can measure Tigrigna bias.
+
+For any word $w$ that tokenises into $k$ subword pieces $t_1, \ldots, t_k$,
+we obtain its representation at layer $l$ as the mean of the $k$ hidden-state
+vectors at the corresponding token positions:
 \begin{equation}
   \mathbf{s}_l(w) = \frac{1}{k} \sum_{i=1}^{k} \mathbf{h}_l(t_i)
   \label{eq:meanpool}
@@ -277,10 +294,11 @@ professions at each transformer layer.
   \centering
   \includegraphics[width=\linewidth]{ti_projection_curve.png}
   \caption{Layer-wise mean projection score (ProjBias) averaged across 30
-  Tigrigna professions on XLM-RoBERTa-base. Positive values indicate
-  male-leaning bias. The curve is near-neutral at layer~0 ($+0.20$), dips to
-  $-0.62$ at layer~2, rises sharply to a peak of $+2.99$ at layer~9, then
-  collapses to $+0.04$ at the final layer~12.}
+  Tigrigna professions on XLM-RoBERTa-base (13 layers). Positive values
+  indicate male-leaning bias. The curve is near-neutral at layer~0 ($+0.20$),
+  dips to $-0.62$ at layer~2, rises sharply to a single peak of $+2.99$ at
+  layer~9, then collapses to $+0.04$ at layer~12. XLM-RoBERTa-large (25 layers)
+  produces an analogous double-peak curve with peaks at layers~13 and~23.}
   \label{fig:layer_curve}
 \end{figure}
 
@@ -363,6 +381,92 @@ Gain = contextual $-$ static. $^\dagger$Nurse contextual value is the mean
 ProjBias across layers 0--12; the peak at layer~9 is $+4.29$.}
 \label{tab:prof_bias}
 \end{table}
+
+\subsection{Model Comparison}
+
+Table~\ref{tab:model_compare} summarises key metrics across the three models.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Layers} & \textbf{Ti vocab} & \textbf{Peak layer} & \textbf{Peak proj} & \textbf{Min Spearman $\rho$} \\
+\midrule
+mBERT                & 13 & \textbf{[UNK]} & --- & $\approx -3.21^*$ & n/a \\
+XLM-RoBERTa-base     & 13 & subword        & 9   & $+2.99$            & $0.992$ \\
+XLM-RoBERTa-large    & 25 & subword        & 23  & $+3.46$            & $0.992$ \\
+\bottomrule
+\end{tabular}
+\caption{Model comparison on Tigrigna gender bias pipeline. $^*$mBERT projects
+all 30 professions identically to $\approx -3.21$ because every Tigrigna token
+maps to \texttt{[UNK]}; the value reflects the single [UNK] embedding's position
+relative to the anchor geometry and carries no profession-specific information.
+Ti vocab = whether the tokeniser produces meaningful Tigrigna subwords.}
+\label{tab:model_compare}
+\end{table}
+
+\paragraph{mBERT — negative control.}
+mBERT's WordPiece vocabulary contains no Ethiopic characters. Every one of the
+30 profession words, all 21 anchor words, and every corpus sentence token maps
+to the single \texttt{[UNK]} token. As a result, all profession representations
+are identical at every layer, the CosDiff estimator yields $\approx 0.0002$ for
+all professions (effectively zero), and ProjBias collapses to a fixed value of
+$\approx -3.21$ driven entirely by the geometry of the anchor
+\texttt{[UNK]} vectors. mBERT cannot meaningfully measure gender bias in
+Tigrigna: vocabulary coverage is a prerequisite.
+
+\paragraph{XLM-RoBERTa-large vs base — capacity effects.}
+Both XLM-RoBERTa models produce meaningful, profession-differentiated bias
+scores with Spearman $\rho \geq 0.992$ at every layer. The large model differs
+from base in three structural ways:
+\begin{enumerate}
+  \item \textbf{Stronger embedding-level bias.} The large model's layer-0 mean
+    projection is $+1.29$, versus $+0.20$ for base — a 6.5$\times$ increase in
+    male bias already present before any attention layer runs.
+  \item \textbf{Double-peak structure.} Base exhibits a single bias accumulation
+    phase peaking at layer~9. Large produces two distinct peaks: layer~13
+    ($+2.99$) and layer~23 ($+3.46$), separated by a partial suppression phase
+    (layers 14--22 oscillate between $+0.91$ and $+2.74$). The extra 12
+    transformer layers create a second bias amplification stage.
+  \item \textbf{Final-layer behaviour.} Base collapses to $+0.04$ at layer~12;
+    large retains $-0.51$ at layer~24, suggesting the large model does not
+    fully suppress bias at output.
+\end{enumerate}
+
+Table~\ref{tab:prof_large} shows per-profession mean ProjBias for the large model
+alongside selected base values.
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lccl}
+\toprule
+\textbf{Profession} & \textbf{Base mean} & \textbf{Large mean} & \textbf{Note} \\
+\midrule
+{\ethiopicfont ዳኛ}        (judge)   & ---      & $+3.67$ & Strongest male in large \\
+{\ethiopicfont መምህር}      (teacher) & $+2.08$  & $+3.16$ & Amplified by capacity \\
+{\ethiopicfont ሓላፊ}       (manager) & ---      & $+2.54$ & Strong male \\
+{\ethiopicfont ፖሊስ}       (police)  & ---      & $+2.96$ & Strong male \\
+{\ethiopicfont ሓኪም}       (doctor)  & $+0.64$  & $+1.17$ & Consistent male, stronger in large \\
+{\ethiopicfont ሓረስታይ}     (farmer)  & $+1.12$  & $+1.85$ & Consistent male \\
+{\ethiopicfont ነርስ}        (nurse)   & $+2.75$  & $+0.47$ & Male in both; weaker in large \\
+{\ethiopicfont ጠበቓ}       (lawyer)  & $-0.10$  & $-0.81$ & Neutral in base → female in large \\
+{\ethiopicfont ሳይንቲስት}    (scientist)& ---     & $-0.86$ & Female in large \\
+{\ethiopicfont መካኒክ}      (mechanic) & ---     & $-0.91$ & Female in large \\
+\bottomrule
+\end{tabular}
+\caption{Mean ProjBias (averaged across all layers) for XLM-RoBERTa-base and
+XLM-RoBERTa-large. Base mean omitted where not previously reported.
+{\ethiopicfont ጠበቓ} (lawyer) is neutral in base but female-leaning in large,
+illustrating how increased model capacity can shift borderline professions.}
+\label{tab:prof_large}
+\end{table}
+
+The most striking individual shift is {\ethiopicfont ጠበቓ} (lawyer): base assigns it a
+grand mean of $-0.10$ (neutral, all 24 batches neutral), while large assigns
+$-0.81$ (female-leaning). The large model's deeper representation space
+apparently resolves the ambiguity that base leaves unresolved.
 
 \subsection{Batch Stability Validation}
 
@@ -475,9 +579,58 @@ bias magnitude — highest context-sensitivity paired with lowest contextual bia
 — is consistent with the hypothesis that contextual diversity suppresses bias
 amplification.
 
+\subsection{Vocabulary Coverage as a Prerequisite for Bias Measurement}
+
+The mBERT experiment provides a clean negative control: a model that scores well
+on standard multilingual benchmarks but is entirely blind to Tigrigna text.
+Because Ethiopic script is absent from mBERT's WordPiece vocabulary, the model
+cannot distinguish \ti{ሓኪም} (doctor) from \ti{ጠበቓ} (lawyer) — both are
+\texttt{[UNK]}. Any bias pipeline applied to such a model would produce
+numerically non-trivial but entirely meaningless results, reflecting only the
+geometry of the \texttt{[UNK]} anchor embeddings.
+
+This finding has a practical implication: before applying a multilingual bias
+probe to a new language, researchers should first verify that the model's
+tokeniser produces non-\texttt{[UNK]} subwords for the target vocabulary.
+For low-resource and non-Latin-script languages, this is not guaranteed even
+for models marketed as ``multilingual''. SentencePiece models with large
+vocabularies ($\geq 128{,}000$ pieces) and character-level fallback — such as
+both XLM-RoBERTa variants — are substantially more likely to provide meaningful
+token-level representations.
+
+\subsection{Capacity Effects: Base vs Large Architecture}
+
+Scaling from XLM-RoBERTa-base (12 layers, 768-dim) to large (24 layers, 1024-dim)
+does not change the \emph{direction} of gender bias — both models assign male
+bias to the same broad set of professions — but it does change the
+\emph{magnitude}, \emph{structure}, and \emph{resolution} of bias representation.
+
+The double-peak structure in the large model (peaks at layers 13 and 23)
+suggests that increased depth creates two semi-independent bias accumulation
+circuits: an early-to-mid-network phase analogous to the single phase in base,
+and a late-network phase with no counterpart in the shallower model. Whether
+these two phases correspond to distinct linguistic computations (e.g.,
+semantic vs.\ pragmatic) is an open question requiring attention head analysis.
+
+The most diagnostically useful capacity effect is the resolution of borderline
+cases. {\ethiopicfont ጠበቓ} (lawyer) is the clearest example: base cannot determine
+its bias direction (24 batches, all neutral), while large assigns it a
+consistent $-0.81$ (female-leaning). Increased representational capacity
+apparently provides enough degrees of freedom to resolve gender associations
+that base leaves ambiguous. This suggests that larger models may be
+\emph{more biased in aggregate} — not because they introduce new associations,
+but because they resolve associations that smaller models encode only weakly.
+
 \subsection{Implications for Low-Resource Language Bias Research}
 
 \begin{enumerate}
+  \item \textbf{Verify tokeniser coverage before probing.} Our mBERT
+    experiment shows that a multilingual model can produce numerically
+    non-trivial but entirely uninformative bias scores when the target language
+    is absent from its vocabulary. Tokeniser coverage should be validated as a
+    mandatory first step for any multilingual bias study on low-resource or
+    non-Latin-script languages.
+
   \item \textbf{Contextual bias measurement may be unreliable for low-resource
     languages.} When $\overline{\cos} > 0.95$, averaging over multiple sentence
     vectors adds negligible information; the bias score is effectively being read
@@ -493,12 +646,19 @@ amplification.
     Type~1 bias (embedding-level) may be addressable via gender-neutral
     retrofitting of the static weight matrix. Type~2 bias (attention-level)
     requires intervention in the transformer computation — for example,
-    projection-based nullspace methods applied to the peak bias layer (layer~9).
+    projection-based nullspace methods applied to the peak bias layer (layer~9
+    in base, layer~23 in large).
+
+  \item \textbf{Larger models amplify and resolve bias.} XLM-RoBERTa-large
+    produces stronger overall male bias ($+3.46$ peak vs $+2.99$) and resolves
+    ambiguous professions (lawyer: neutral in base, female-leaning in large).
+    Scaling multilingual models may increase bias precision without necessarily
+    changing bias direction.
 
   \item \textbf{Perfect metric agreement simplifies reporting.} Spearman
-    $\rho \geq 0.992$ between ProjBias and CosDiff at every layer means both
-    metrics are interchangeable for ranking professions by bias magnitude.
-    Researchers can safely report either without loss of comparative validity.
+    $\rho \geq 0.992$ between ProjBias and CosDiff at every layer, in both
+    XLM-RoBERTa models, means both metrics are interchangeable for ranking
+    professions by bias magnitude regardless of model scale.
 \end{enumerate}
 
 

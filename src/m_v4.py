@@ -83,7 +83,8 @@ def classify_sentence(sentence: str) -> str:
 # ── Language & model ──────────────────────────────────────────────────────────
 LANGUAGE   = "ti"                          # "en" | "es" | "ar" | "ti"
 #MODEL_NAME = "bert-base-multilingual-cased"
-MODEL_NAME = "xlm-roberta-base"          # ← switch model here
+MODEL_NAME = "xlm-roberta-large"
+#MODEL_NAME = "xlm-roberta-base"          # ← switch model here
 
 # ── Run mode ───────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace — use to understand the pipeline
