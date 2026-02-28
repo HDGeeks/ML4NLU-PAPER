@@ -4,10 +4,13 @@
 % Fonts & Encoding (XeLaTeX)
 % =========================
 \usepackage{fontspec}
-\setmainfont{TeX Gyre Pagella}[
-  SmallCapsFeatures = {Letters=SmallCaps},
-  FallbackFonts    = {Noto Serif Ethiopic}  % renders Tigrigna (Ethiopic) glyphs
-]
+\usepackage{ucharclasses}
+
+\setmainfont{TeX Gyre Pagella}[SmallCapsFeatures={Letters=SmallCaps}]
+
+% Ethiopic font for Tigrigna — auto-applied to every Ethiopic Unicode character
+\newfontfamily\ethiopicfont{Noto Serif Ethiopic}[Scale=MatchLowercase]
+\setTransitionsFor{Ethiopic}{\ethiopicfont}{\normalfont}
 
 % =========================
 % Layout
