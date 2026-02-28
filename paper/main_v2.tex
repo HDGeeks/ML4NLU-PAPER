@@ -1,11 +1,13 @@
 \documentclass[10pt]{article}
 
 % =========================
-% Fonts & Encoding
+% Fonts & Encoding (XeLaTeX)
 % =========================
-\usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
-\usepackage[sc]{mathpazo}      % Palatino w/ small caps
+\usepackage{fontspec}
+\setmainfont{TeX Gyre Pagella}[
+  SmallCapsFeatures = {Letters=SmallCaps},
+  FallbackFonts    = {Noto Serif Ethiopic}  % renders Tigrigna (Ethiopic) glyphs
+]
 
 % =========================
 % Layout
@@ -62,7 +64,6 @@
 % =========================
 \usepackage[authoryear,round]{natbib}
 \setcitestyle{aysep={,},citesep={;},open={(},close={)}}
-\setcitestyle{maxcitenames=2,maxbibnames=99}
 
 % =========================
 % Hyperlinks (load late)
@@ -365,6 +366,10 @@ For each language we provide:
         kinship terms, generic gender markers).
 \end{itemize}
 
+The Tigrigna profession list, corpus, and anchor sets were validated by the
+first author, a native Tigrigna speaker, for lexical correctness and cultural
+plausibility prior to all experiments.
+
 \subsection{Context Sampling}
 
 For each target word $w$, we retrieve up to $n$ sentences containing $w$
@@ -662,31 +667,30 @@ architecture on Tigrigna, constituting the main quantitative result.
          (Eq.~\ref{eq:spearman}) across all layers for that model.}
 \label{tab:model-comparison}
 \small
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccc}
 \toprule
 \textbf{Model} & \textbf{Layers} & \textbf{Vocab} & \textbf{Peak} & \textbf{Peak proj} & \textbf{M:F:N} & \textbf{Min $\rho$} \\
 \midrule
-mBERT              & 13 & WP $\approx$120K   & ---  & $-3.61^{*}$  & n/a    & $\dagger$1.000 \\
+mBERT              & 13 & WP $\approx$120K   & ---  & $-3.61^{a}$  & n/a    & ${}^{b}$1.000 \\
 XLM-R-base         & 13 & SP 250K            &   9  & $+2.99$      & 26:3:1 & 0.992 \\
 XLM-R-large        & 25 & SP 250K            &  23  & $+3.46$      & 25:3:2 & 0.992 \\
-XLM-V-base         & 13 & SP 1M              &  11  & $+2.63$      & $25{:}2{:}1^{\ddagger}$ & $0.970^{\S}$ \\
-mDeBERTa-v3-base   & 13 & SP $\approx$128K   &  11  & $-1.84^{\P}$ & 2:28:0 & 0.974 \\
+XLM-V-base         & 13 & SP 1M              &  11  & $+2.63$      & $25{:}2{:}1^{c}$ & $0.970^{d}$ \\
+mDeBERTa-v3-base   & 13 & SP $\approx$128K   &  11  & $-1.84^{e}$  & 2:28:0 & 0.974 \\
 \bottomrule
-\multicolumn{7}{p{0.95\linewidth}}{%
-$^{*}$~mBERT maps all Tigrigna single-word tokens to \texttt{[UNK]};
-  reported value is the degenerate single-word cluster mean at layer~0.
-  Multi-word professions form a second cluster: $-0.677$ at layer~0.
-  No profession-level differentiation is present.\\
-$^{\dagger}$~Spearman $\rho \approx 1.000$ at all layers is a tied-rank
-  artifact: all professions share identical values at each layer, making
-  ranks trivially tied; the result is not meaningful metric agreement.\\
-$^{\ddagger}$~28/30 professions; \textit{ጠበቓ} and \textit{ነዳቓይ} excluded
-  (0 corpus hits under the 1M vocabulary).\\
-$^{\S}$~Layer~12 anomaly: $\rho = 0.720$; all other layers $\rho \geq 0.970$.\\
-$^{\P}$~Negative peak indicates female-leaning direction; mDeBERTa produces a
-  complete directional reversal relative to the XLM-R family.
-} \\
 \end{tabular}
+\begin{minipage}{\linewidth}
+\smallskip\footnotesize
+$^{a}$~mBERT maps all Tigrigna single-word tokens to \texttt{[UNK]};
+  value is the degenerate single-word cluster mean at layer~0
+  (multi-word cluster: $-0.677$); no profession-level differentiation exists.\newline
+$^{b}$~$\rho \approx 1.000$ throughout is a tied-rank artifact: all professions
+  share identical values at each layer, making ranks trivially tied.\newline
+$^{c}$~28/30 professions; \textit{ጠበቓ} and \textit{ነዳቓይ} excluded
+  (0 corpus hits under the 1M vocabulary).\newline
+$^{d}$~Layer~12 anomaly: $\rho = 0.720$; all other layers $\rho \geq 0.970$.\newline
+$^{e}$~Negative peak indicates female-leaning direction; complete directional
+  reversal relative to the XLM-R family.
+\end{minipage}
 \end{table}
 
 % ----------------------------------------------------------
@@ -837,17 +841,19 @@ each model.
 \toprule
 \textbf{Model} & \textbf{Min $\rho$} & \textbf{Max $\rho$} & \textbf{Notes} \\
 \midrule
-mBERT            & ---   & ---   & degenerate (tied ranks, see Table~\ref{tab:model-comparison}) \\
-XLM-R-base       & 0.992 & 1.000 & perfect at layers 11--12 \\
-XLM-R-large      & 0.993 & 1.000 & perfect at layers 5 and 24 \\
-XLM-V-base       & $0.720^{*}$ & 0.999 & layer 12 anomaly; $\rho \geq 0.970$ for layers 0--11 \\
-mDeBERTa-v3-base & 0.974 & 0.999 & lowest at layer 9 \\
+mBERT            & ---         & ---   & degenerate (tied ranks, see Table~\ref{tab:model-comparison}) \\
+XLM-R-base       & 0.992       & 1.000 & perfect at layers 11--12 \\
+XLM-R-large      & 0.993       & 1.000 & perfect at layers 5 and 24 \\
+XLM-V-base       & $0.720^{a}$ & 0.999 & layer 12 anomaly; $\rho \geq 0.970$ for layers 0--11 \\
+mDeBERTa-v3-base & 0.974       & 0.999 & lowest at layer 9 \\
 \bottomrule
-\multicolumn{4}{p{0.85\linewidth}}{%
-$^{*}$~Layer~12 of XLM-V-base shows a representational collapse that
-       disrupts both estimators simultaneously, yielding the one anomalous
-       low-correlation point. Excluding layer~12, the minimum is 0.970.}\\
 \end{tabular}
+\begin{minipage}{\linewidth}
+\smallskip\footnotesize
+$^{a}$~Layer~12 of XLM-V-base undergoes a representational collapse that
+disrupts both estimators simultaneously, yielding the one anomalous low-correlation
+point. Excluding layer~12, the minimum is 0.970.
+\end{minipage}
 \end{table}
 
 For all non-degenerate models, Spearman $\rho \geq 0.970$ at every valid layer
@@ -1014,9 +1020,11 @@ transition at the final layer, not with genuine metric disagreement.
         Section~\ref{sec:case-hakim}, Tigrigna tokens produce highly similar
         representations across contexts. The bias signal reflects intrinsic
         token geometry rather than contextually modulated gender inference.
-  \item \textbf{No human validation}: We have no ground-truth Tigrigna
-        speaker judgments about profession gender associations to validate
-        against, limiting the cultural interpretation of findings.
+  \item \textbf{Limited external validation}: The profession list and
+        corpus were validated by the author, a native Tigrigna speaker,
+        providing an expert-level check on lexical correctness and
+        cultural plausibility. Broader community validation across diverse
+        speaker backgrounds remains future work.
   \item \textbf{Causal opacity}: We cannot directly observe the mechanism by
         which Disentangled Attention reverses bias direction; the attribution
         to attention architecture is inferential.
@@ -1083,7 +1091,7 @@ independently reshapes bias geometry.
 
 \subsection{Full Tigrigna Profession List (30 Terms)}
 
-\begin{itemize}[noitemsep, leftmargin=*, columns=2]
+\begin{itemize}[noitemsep, leftmargin=*]
   \item ሓኪም (doctor)
   \item ነርስ (nurse)
   \item መምህር (teacher)
