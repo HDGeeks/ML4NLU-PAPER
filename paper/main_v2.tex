@@ -8,8 +8,15 @@
 
 \setmainfont{TeX Gyre Pagella}[SmallCapsFeatures={Letters=SmallCaps}]
 
-% Ethiopic font for Tigrigna — auto-applied to every Ethiopic Unicode character
-\newfontfamily\ethiopicfont{Noto Serif Ethiopic}[Scale=MatchLowercase]
+% Ethiopic font for Tigrigna — auto-applied to every Ethiopic Unicode character.
+% All shape variants point to the same face (Noto Serif Ethiopic has no italic/bold),
+% preventing "font shape undefined" warnings when Ethiopic text appears inside \textit{}.
+\newfontfamily\ethiopicfont{Noto Serif Ethiopic}[
+  Scale        = MatchLowercase,
+  ItalicFont   = {Noto Serif Ethiopic},
+  BoldFont     = {Noto Serif Ethiopic},
+  BoldItalicFont = {Noto Serif Ethiopic}
+]
 \setTransitionsFor{Ethiopic}{\ethiopicfont}{\normalfont}
 
 % =========================
@@ -20,6 +27,7 @@
 \onehalfspacing
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1em}
+\emergencystretch=2em          % reduces overfull-hbox warnings without full \sloppy
 
 % =========================
 % Floats / placement
@@ -41,7 +49,10 @@
 % Figures & formatting
 % =========================
 \usepackage{graphicx}
-\usepackage{microtype}
+% protrusion=true: hanging punctuation (works under XeLaTeX).
+% expansion=false: hz-expansion is pdfTeX-only, skip it.
+% verbose=false:  silence slot-number warnings from newunicodechar macros.
+\usepackage[protrusion=true, expansion=false, verbose=false]{microtype}
 \usepackage{caption}
 \usepackage{titlesec}
 \usepackage{enumitem}
@@ -179,9 +190,8 @@ and Arabic, using five multilingual transformer architectures:
 \texttt{xlm-roberta-base}, \texttt{xlm-roberta-large},
 \texttt{facebook/xlm-v-base}, and \texttt{microsoft/mdeberta-v3-base}.
 Contextual token representations are reduced to stable word-level embeddings
-via contextual-to-static aggregation \citep{bommasani2020reductions}, enabling
-layer-wise projection of profession terms onto a geometric gender direction
-\citep{bolukbasi2016man}.
+via contextual-to-static aggregation, enabling layer-wise projection of
+profession terms onto a geometric gender direction.
 
 Our results reveal four key findings. First, four of five models encode
 measurable male-leaning bias for Tigrigna despite the language's absence
@@ -226,8 +236,7 @@ stage.
 
 A layer-wise perspective therefore becomes essential. Lower transformer layers
 tend to encode lexical and morphological features, while deeper layers capture
-increasingly abstract semantic relationships \citep{rogers2020primer,
-tenney-etal-2019-bert}. If gender associations evolve across layers, then bias
+increasingly abstract semantic relationships. If gender associations evolve across layers, then bias
 is not merely inherited from surface statistics but may be actively reshaped
 during contextual processing. Crucially, different attention architectures may
 reshape this signal in fundamentally different ways---a hypothesis this paper
