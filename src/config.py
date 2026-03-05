@@ -3,6 +3,7 @@ LANGUAGE = "ti"   # "en" | "es" | "ar" | "ti"
 
 # MODEL_NAMES can be a single string OR a list — all will be run in sequence.
 MODEL_NAMES = [
+    "bert-base-multilingual-cased",   # negative control — Tigrigna → [UNK]
     "xlm-roberta-base",
     "xlm-roberta-large",
     "facebook/xlm-v-base",
@@ -31,7 +32,7 @@ DEBUG_WORD = "ሓረስታይ"
 # ── Output root ───────────────────────────────────────────────────────────────
 # Change to "output_refactored" to test without overwriting existing results.
 # Change back to "output" for normal use.
-OUTPUT_ROOT = "output_refactored"
+OUTPUT_ROOT = "output"
 
 # ── Context counts ────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word
