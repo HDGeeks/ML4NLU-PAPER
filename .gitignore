@@ -1,6 +1,8 @@
 .venv/
 .mypy_cache/
 .models/
+paper/
+
 # corpora / large datasets
 data/en-ti.txt/
 data/tigrigna/corpus_ti_raw.txt
