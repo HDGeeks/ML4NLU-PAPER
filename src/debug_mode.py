@@ -172,7 +172,7 @@ def run_debug(lang, word, tokenizer, model, corpus,
     Batch debug mode: score every full batch of PROFESSION_CONTEXTS sentences
     containing `word`, writing one log file per batch and an index summary.
     """
-    output_dir = Path("output") / lang / word
+    output_dir = Path(config.OUTPUT_ROOT) / lang / word
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\nSearching corpus for all sentences containing '{word}'...")

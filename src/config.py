@@ -28,6 +28,11 @@ MODE = "bulk"
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
 DEBUG_WORD = "ሓረስታይ"
 
+# ── Output root ───────────────────────────────────────────────────────────────
+# Change to "output_refactored" to test without overwriting existing results.
+# Change back to "output" for normal use.
+OUTPUT_ROOT = "output_refactored"
+
 # ── Context counts ────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word
 PROFESSION_CONTEXTS = 20   # sentences per profession term

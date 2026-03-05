@@ -26,7 +26,7 @@ os.environ["TRANSFORMERS_NO_ADVISORY_WARNINGS"] = "1"
 def run_bulk(lang, tokenizer, model, corpus, male_words, female_words,
              job_titles, model_name):
     model_slug   = config.MODEL_SLUG_MAP.get(model_name, model_name.replace("/", "_"))
-    output_dir   = Path("output") / lang / model_name.replace("/", "_")
+    output_dir   = Path(config.OUTPUT_ROOT) / lang / model_name.replace("/", "_")
     bias_csv     = output_dir / f"{lang}_bias_by_layer.csv"
     spearman_csv = output_dir / f"{lang}_spearman_by_layer.csv"
     mean_csv     = output_dir / f"{lang}_projection_layer_mean.csv"
