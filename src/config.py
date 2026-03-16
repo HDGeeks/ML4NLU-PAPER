@@ -32,7 +32,7 @@ DEBUG_WORD = "ممرض"  # "nurse" in Arabic; change to a profession term in the
 # ── Output root ───────────────────────────────────────────────────────────────
 # Change to "output_refactored" to test without overwriting existing results.
 # Change back to "output" for normal use.
-OUTPUT_ROOT = "output/hadil/"
+OUTPUT_ROOT = "output/hadil/debug"
 
 # ── Context counts ────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word
