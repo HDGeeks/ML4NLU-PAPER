@@ -6,7 +6,8 @@ the layer-wise gender geometry (centroids + unit direction).
 """
 
 import torch
-from data_loader import find_sentences
+from data_loader import find_sentences, find_sentences_arabic
+import config 
 
 
 def word_vector_per_layer(model, tokenizer, sentences: list, word: str,
@@ -83,7 +84,11 @@ def build_gender_geometry(model, tokenizer, corpus: list,
         count   = 0
         skipped = []
         for word in words:
-            sents = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
+            #sents = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
+            if config.LANGUAGE == "ar":
+                sents = find_sentences_arabic(corpus, word, n_contexts, verbose=verbose)
+            else:
+                sents = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
             if len(sents) < n_contexts:
                 skipped.append((word, len(sents)))
                 continue

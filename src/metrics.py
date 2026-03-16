@@ -9,10 +9,14 @@ Inputs are tensors (from embeddings.py) and lists; outputs are floats/dicts.
 
 from collections import defaultdict
 
+from nltk import corpus
+from numpy.testing import verbose
 import torch
 from scipy.stats import spearmanr
 
-from data_loader import find_sentences
+
+from data_loader import find_sentences, find_sentences_arabic
+import config 
 from embeddings import word_vector_per_layer
 
 
@@ -51,7 +55,12 @@ def bias_scores_for_word(model, tokenizer, corpus: list, word: str,
         print("\n" + "-"*60)
         print(f"STEP: Scoring '{word}'")
 
-    sentences = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
+    #sentences = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
+    if config.LANGUAGE == "ar":
+        sentences = find_sentences_arabic(corpus, word, n_contexts, verbose=verbose)
+    else:
+        sentences = find_sentences(corpus, word, n_contexts, tokenizer, verbose=verbose)
+
     if len(sentences) < n_contexts:
         return None, len(sentences)
 

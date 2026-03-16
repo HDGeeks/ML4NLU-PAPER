@@ -1,5 +1,5 @@
 # ── Language & model ──────────────────────────────────────────────────────────
-LANGUAGE = "ti"   # "en" | "es" | "ar" | "ti"
+LANGUAGE = "ar"   # "en" | "es" | "ar" | "ti"
 
 # MODEL_NAMES can be a single string OR a list — all will be run in sequence.
 MODEL_NAMES = [
@@ -27,12 +27,12 @@ MODEL_SLUG_MAP = {
 MODE = "bulk"
 
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
-DEBUG_WORD = "ሓረስታይ"
+# DEBUG_WORD = "ሓረስታይ"
 
 # ── Output root ───────────────────────────────────────────────────────────────
 # Change to "output_refactored" to test without overwriting existing results.
 # Change back to "output" for normal use.
-OUTPUT_ROOT = "output"
+OUTPUT_ROOT = "output/hadil/"
 
 # ── Context counts ────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word

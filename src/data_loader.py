@@ -90,3 +90,23 @@ def find_sentences(corpus: list, word: str, n: int, tokenizer, verbose: bool = F
 def find_all_matching(corpus: list, word: str) -> list:
     """Return (row_idx, sentence) for every corpus sentence containing word."""
     return [(idx, s) for idx, s in enumerate(corpus) if word in s]
+
+def find_sentences_arabic(corpus: list, word: str, n: int, verbose: bool = False) -> list:
+    """Arabic sentence finder using substring matching to handle morphological prefixes."""
+    if verbose:
+        print(f"\n  find_sentences_arabic('{word}', n={n})")
+
+    found = []
+    for sentence in corpus:
+        if word in sentence:
+            found.append(sentence)
+        if len(found) >= n:
+            break
+
+    if verbose:
+        print(f"    found {len(found)}/{n} sentences")
+        for i, s in enumerate(found):
+            print(f"    [{i+1}] {s}")
+        if len(found) < n:
+            print(f"    WARNING: only {len(found)} sentences — word may be SKIPPED in bulk mode")
+    return found
