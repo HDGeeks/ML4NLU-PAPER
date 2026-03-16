@@ -24,15 +24,16 @@ MODEL_SLUG_MAP = {
 # ── Run mode ──────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace
 # "bulk"  → all professions, one progress line per word
-MODE = "debug"
+MODE = "bulk"
 
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
-DEBUG_WORD = "ممرض"  # "nurse" in Arabic; change to a profession term in the target language
+#DEBUG_WORD = "ممرض"  # "nurse" in Arabic; change to a profession term in the target language
 
 # ── Output root ───────────────────────────────────────────────────────────────
 # Change to "output_refactored" to test without overwriting existing results.
 # Change back to "output" for normal use.
-OUTPUT_ROOT = "output/hadil/debug"
+OUTPUT_ROOT = "output"
+
 
 # ── Context counts ────────────────────────────────────────────────────────────
 ANCHOR_CONTEXTS     = 12   # sentences per anchor word
