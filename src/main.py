@@ -15,7 +15,7 @@ from transformers import AutoModel, AutoTokenizer
 import config
 from data_loader import load_anchors, load_corpus, load_professions
 from debug_mode import run_debug
-from embeddings import build_gender_geometry
+from embeddings_v2 import build_gender_geometry
 from metrics import bias_scores_for_word, spearman_per_layer
 from output import plot_curve
 

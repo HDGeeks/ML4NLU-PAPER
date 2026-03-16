@@ -17,7 +17,7 @@ from scipy.stats import spearmanr
 
 from data_loader import find_sentences, find_sentences_arabic
 import config 
-from embeddings import word_vector_per_layer
+from embeddings_v2 import word_vector_per_layer
 
 
 def projection_score(vec, direction) -> float:

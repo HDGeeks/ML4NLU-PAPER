@@ -24,10 +24,10 @@ MODEL_SLUG_MAP = {
 # ── Run mode ──────────────────────────────────────────────────────────────────
 # "debug" → single profession, full verbose trace
 # "bulk"  → all professions, one progress line per word
-MODE = "bulk"
+MODE = "debug"
 
 # ── Debug word (only used when MODE = "debug") ────────────────────────────────
-# DEBUG_WORD = "ሓረስታይ"
+DEBUG_WORD = "ممرض"  # "nurse" in Arabic; change to a profession term in the target language
 
 # ── Output root ───────────────────────────────────────────────────────────────
 # Change to "output_refactored" to test without overwriting existing results.
