@@ -2,6 +2,11 @@
 .mypy_cache/
 .models/
 paper/
+citations/
+output_es_final/
+overleaf/
+.claude/
+rules.txt
 
 # corpora / large datasets
 data/en-ti.txt/

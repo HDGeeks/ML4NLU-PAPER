@@ -3,7 +3,8 @@
     "allow": [
       "WebFetch(domain:aclanthology.org)",
       "WebFetch(domain:arxiv.org)",
-      "Bash(pdftotext /Users/hd/Desktop/ML4NLU-PAPER/citations/bolukbasi2016man.pdf -)"
+      "Bash(pdftotext /Users/hd/Desktop/ML4NLU-PAPER/citations/bolukbasi2016man.pdf -)",
+      "Read(//Users/hd/Desktop/ML4NLU-PAPER/**)"
     ]
   }
 }
