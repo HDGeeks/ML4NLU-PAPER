@@ -1,9 +1,0 @@
-1 . All sections must hold clean and concise purpose no duplication
-2 . No citaions in abstract and introduction
-3 . All the papers that were used in methodoolgy and the formulas must be correct IF NOT its A FAIL
-4 . We have to make sure we codded the pipeline correctly according to the Methodolgy , If NOT its a FAIL
-5 . We have to carefully bring the results from the outputs to the pdf , If not its A FAIL
-6 . If we mis interpret any numbers in the pdf , its a FAIL
-7 . This are hardcore professors they know a bullshit whenthey see one , we need a very strict cecking maechanism that we did this carefully
-8 . Add rules that I might have not thought of 
-9 . starting from top , we work top to mbottom , by grilling each section subsection nand paragraph and then we add to main_v6.tex with extreme control because v6 could be final
