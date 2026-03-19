@@ -8,6 +8,16 @@ overleaf/
 .claude/
 rules.txt
 
+# old/utility src files
+src/verify_citations.py
+src/embeddings.py
+src/tigrigna_corpus_builder.py
+src/debug_mode.py
+src/diagnsotic.py
+src/check_rep.py
+src/prepare_tigrigna_corpus.py
+src/target_weights.py
+
 # corpora / large datasets
 data/en-ti.txt/
 data/tigrigna/corpus_ti_raw.txt
