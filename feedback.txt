@@ -1,0 +1,189 @@
+
+Verified against output CSVs in output/ti/, output/ar/, output/es/
+======================================================================
+
+
+----------------------------------------------------------------------
+SECTION 4.1 — Quantitative Overview
+----------------------------------------------------------------------
+
+ISSUE 1: Missing models
+You mention "mBERT, XLM-R, and XLM-V" — the study has FIVE models:
+mBERT, XLM-R-base, XLM-R-large, XLM-V-base, and mDeBERTa-v3-base.
+XLM-R-large and mDeBERTa are completely absent from your analysis.
+mDeBERTa is the central finding of the entire paper.
+
+ISSUE 2: "across all 12 layers"
+Models do not all have 12 layers. mBERT, XLM-R-base, XLM-V, and
+mDeBERTa each produce 13 hidden states (layers 0-12). XLM-R-large
+produces 25 hidden states (layers 0-24). The layer count varies by model.
+
+----------------------------------------------------------------------
+SECTION 4.2 — Layer-wise Distribution
+----------------------------------------------------------------------
+
+ISSUE 3: "Layers 1-5 range from -0.12 to +0.25" — FABRICATED
+The CSVs show this is not true. Examples from actual data:
+  - XLM-R-base Tigrigna, layer 2: -0.617
+  - XLM-R-base Tigrigna, layer 5: +0.516
+  - XLM-R-base Arabic, layer 2: -0.962
+The range in early layers is much wider than -0.12 to +0.25.
+Do not cite a numerical range that is not in the output files.
+
+ISSUE 4: "Arabic engineer (muhandis) reached +5.80 at Layer 11"
+This number does not appear in any CSV. The closest real values are:
+  - XLM-R-base: مهندس peak = +3.86 at layer 9
+  - XLM-R-large: مهندس peak = +5.67 at layer 14 (not layer 11)
+  - XLM-V-base: مهندس peak = +3.30 at layer 9
+The +5.80 figure is wrong. The peak for XLM-R-large is +5.67 at layer 14.
+
+ISSUE 5: "peak in the penultimate layers" / "starting at Layer 8"
+Peak layers differ by model and language:
+  - XLM-R-base: peaks at layer 9 (most languages)
+  - XLM-R-large: peaks at layer 14 (Arabic), layer 23 (Tigrigna/Spanish)
+  - XLM-V-base: peaks at layer 11
+There is no universal "Layer 8 explosion." For XLM-R-large, the buildup
+continues all the way to layers 14 and 23.
+
+----------------------------------------------------------------------
+SECTION 4.3 — The Tigrigna Paradox
+----------------------------------------------------------------------
+
+ISSUE 6: "mBERT Tigrigna mean Proj = -6.42 at Layer 11"
+The number -6.42 is technically in the CSV (layer 11 mean = -6.418).
+HOWEVER, citing this number without its critical context is a serious
+error. mBERT maps ALL Tigrigna tokens to [UNK] because Tigrigna uses
+Ge'ez script and is absent from mBERT's WordPiece vocabulary. The entire
+mBERT Tigrigna output is measuring [UNK] token bias, not profession bias.
+It is not a valid data point and the paper explicitly places it in an
+appendix as a degenerate case. You must not use it as a comparable
+result alongside XLM-V.
+
+ISSUE 7: The "Polarity Paradox" is built on a false comparison
+You compare mBERT (female-leaning, -6.42) with XLM-V (male-leaning, +2.63)
+and conclude this is a "tokenization noise" effect. This is wrong on two counts:
+  (a) mBERT's value is [UNK] noise, not a real Tigrigna measurement.
+  (b) The actual polarity reversal finding is mDeBERTa (28 of 30 professions
+      female-leaning, peak = -1.84), which you do not mention at all.
+      mDeBERTa uses SentencePiece and tokenizes Tigrigna correctly.
+      The reversal is therefore NOT tokenization noise — it is an architecture
+      effect from Disentangled Attention.
+
+----------------------------------------------------------------------
+SECTION 4.4 — Spearman Stability
+----------------------------------------------------------------------
+
+ISSUE 8: "rho ≈ 0.99"
+The global minimum Spearman rho across all valid models, layers, and
+languages is 0.964 (XLM-R-base, Arabic, layer 0). While most values
+are close to 1.0, reporting "≈ 0.99" overstates the floor.
+The correct statement is rho >= 0.964.
+
+----------------------------------------------------------------------
+SECTION 4.5 — Layer 12 Collapse
+----------------------------------------------------------------------
+
+ISSUE 9: "A recurring pattern across EVERY model and language"
+The collapse at layer 12 is NOT uniform. XLM-R-base layer 12 is near
+zero for most languages (Tigrigna: +0.04, Spanish: close to zero) — a
+gentle decay, not a crash. The dramatic collapse is specific to:
+  - XLM-V-base (Tigrigna layer 12: extreme values)
+  - mDeBERTa-v3-base (layer 12: values exceeding -17 and +12 individually)
+Saying "every model" is inaccurate.
+
+ISSUE 10: "After reaching maximum at Layer 11"
+As noted in Issue 5, XLM-R-large peaks at layers 14 and 23, not 11.
+The Layer 12 "crash" also only applies to 13-layer models. In XLM-R-large
+the final layer is 24, and the decay begins much earlier.
+
+----------------------------------------------------------------------
+SECTION 5.2 — CRITICAL MISINTERPRETATION
+----------------------------------------------------------------------
+
+ISSUE 11: "Architecture determines Depth, Data determines Direction"
+This conclusion directly contradicts the main finding of the paper.
+The study's primary contribution is that mDeBERTa-v3-base, trained on
+comparable multilingual data to XLM-R, produces a COMPLETE direction
+reversal — 28 of 30 Tigrigna professions are female-leaning, versus
+male-leaning in XLM-R. The ONLY architectural difference is Disentangled
+Attention (mDeBERTa) vs standard multi-head attention (XLM-R).
+
+This means architecture determines BOTH depth AND direction. Data alone
+does not determine direction. Your conclusion gets this backwards and
+dismisses the central finding of the paper.
+
+Correction: Architecture (specifically attention mechanism design)
+determines both the depth of bias encoding AND the direction of bias.
+This is demonstrated by the mDeBERTa reversal, confirmed across all
+three languages (Arabic: -3.04, Tigrigna: -1.84, Spanish: -0.62).
+
+----------------------------------------------------------------------
+SECTION 5.4 — XLM-V Vocabulary
+----------------------------------------------------------------------
+
+ISSUE 12: "XLM-V showed more civilized bias trajectories for Tigrigna"
+This is not supported by the data. XLM-V-base has the most extreme
+individual profession values at layer 12 (reaching values in the range
+of -17 to +18 for individual terms). The trajectory is anything but
+"civilized" — the collapse at layer 12 is the most dramatic of all models.
+
+ISSUE 13: "Increasing vocabulary acts as structural de-biasing"
+The data does not support this conclusion. XLM-V-base shows a Tigrigna
+peak projection of +2.63 — strong male-leaning bias. A larger vocabulary
+improves tokenization coverage (two fewer professions are lost to
+vocab mismatch), but it does NOT reduce the bias magnitude itself.
+Calling it "structural de-biasing" is not justified by the results.
+
+----------------------------------------------------------------------
+SECTION 6 — Conclusion
+----------------------------------------------------------------------
+
+ISSUE 14: mDeBERTa is completely absent from the conclusion
+The primary contribution of this study — the Disentangled Attention
+reversal in mDeBERTa — does not appear anywhere in your conclusion.
+This is the most important finding. Any conclusion that does not address
+it is incomplete regardless of what else it says.
+
+ISSUE 15: "Three primary conclusions" — there are four research questions
+The study addresses four RQs: cross-lingual transfer, layer-wise
+trajectory, metric agreement, and architecture effect on direction.
+Your conclusion covers only the first three and misses the fourth entirely.
+
+ISSUE 16: "Peak at penultimate layer (Layer 11)"
+As noted above, XLM-R-large peaks at layer 23 (Tigrigna/Spanish) and
+layer 14 (Arabic). The conclusion should not state a single universal
+peak layer. The correct framing is "mid-to-deep layers, with the exact
+peak depending on model depth."
+
+----------------------------------------------------------------------
+SUMMARY OF CRITICAL ISSUES (must fix before submission)
+----------------------------------------------------------------------
+1. mDeBERTa is missing from the entire paper — this is the main finding
+2. The "Architecture=Depth, Data=Direction" conclusion contradicts the data
+3. mBERT Tigrigna values used as real data when all tokens map to [UNK]
+4. Arabic engineer value +5.80 at layer 11 does not exist in the CSVs
+5. Early layer range -0.12 to +0.25 does not match the actual CSV values
+6. Universal "Layer 11 peak" claim is wrong for XLM-R-large (peaks at 23/14)
+7. XLM-V described as de-biasing when it shows the most extreme L12 collapse
+
+======================================================================
+
+FINAL WARNING
+----------------------------------------------------------------------
+Several numbers in this draft do not match the output CSVs we all share.
+The value +5.80 for Arabic engineer does not exist in any CSV file. The
+early-layer range -0.12 to +0.25 does not reflect the actual data. These
+are not rounding differences — they are numbers that are not in the results
+at all. Every single value cited in the paper must be traceable to a row
+in the output CSV files. If a number cannot be found there, it cannot appear
+in the paper. There are no exceptions to this.
+
+This is a hard deadline: please produce the complete draft with all tables
+and figures by Saturday. Without the actual layer-wise plots and result
+tables, it is impossible to do a proper cross-comparison, and we risk
+submitting a paper where the three sections contradict each other on the
+same shared results. The numbers we report must be identical because we
+ran the same code on the same data. Any divergence is an error, not a
+difference of interpretation.
+
+======================================================================
